@@ -1,0 +1,110 @@
+---
+title: "CS518 - Final Project Report"
+author: Nora Quick
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+```
+
+## Executive Summary
+This report covers the a cencus dataset about adult income information. There are two main questions to disect thoughout this report. Firstly, do either age or hours worked increase the likelyhood of earning more than $50K a year and if so which one and what is most significant age/hours worked? Secondly, what are the causes, if any, of divorce?
+
+Focusing on age and hours worked in relation to income it was found that there are significant correlation between age and income as well as hours worked and income. It was found that of the people who make make less than 50K a year are on average younger than 37 years old while the people who make more than 50K a year are on average older than 37 years old. In addition to this, of the people who make less than 50K a year the younger group works less than 34.4 hours a week while of the people who make more than 50K a year the older group work less than 34.4 hours a week.
+
+Focusing on only the data that seems most relatable to marrital status it was found that there were quite a few variables that were significant to divorce. Age, work class (job), some education level, race, hours worked and income are all significant factors of divorce. 
+
+
+## Body
+### Dataset Desciption & Questions
+
+```{r, include=FALSE}
+cencus <- read.csv("adult.csv")
+```
+
+For question one I deviated on the methodology I was originally going to use. To determine if either age or hours worked a week were significant to income I decided to use a binomial logit method. For this I made income greater than 50K "1" and income less than 50K "0". This methodology showed that both age and hours worked were significant with both showing  p value of <2e-16.
+
+Additionally below there is a graph. On this graph I have the x-axis as income and the y-axis as age. Additionally there is color indicating if the person works more or less than 34.4 hours a week. First of all we can see that there is quite a large age discrepensy between the two incomes. Secondly, the color shows that whole hours worked is important to income it is not a clear indication like age. The number 34.4 comes from the average hours worked a week in the US. 
+
+![](box.PNG)
+
+One concern I have from this model is overfitting. There is quite a high residual deviance and degrees of freedom. 
+
+
+For question two I deviated fron my original model again. Instead of a mixed model I chose to do a poisson distribution instead. Additionally, instead of using all variables I chose to look at the ones that made the most sense for marital status. These variables are age, work-class, education, race, and income. Many of the work class have significant p-values as seen below.
+
+workclassFederal-gov                     4.92e-06
+
+workclassLocal-gov                       3.75e-11
+
+workclassNever-worked                    0.366148 
+
+workclassPrivate                         1.99e-11
+
+workclassSelf-emp-inc                    0.000762
+
+workclassSelf-emp-not-inc                1.88e-10
+
+workclassState-gov                       4.31e-10
+
+workclassWithout-pay                     0.911512    
+
+The model also shows some significance for education level but shockingly it was not all lower level education as I was expecting. There was only one race that showed significance with a significant p-value of 0.000705. This shocked me as I didn't expect only one race to be significant and so much more than others. Hours worked is significant with a p-value of < 2e-16 which was expected along with income which has a significant p-value of < 2e-16.
+
+Again I have a concern with this model as the residual deviance and degree of freedome is so large as well as the AIC. However, the fisher score is reasonable and only some variables, variabes that make sense, are significant so I feel comfortable concluding from this mode. 
+
+## Conclusions/Discussion
+Focusing on age and hours worked in relation to income it was found that there are significant correlation between age and income as well as hours worked and income. It was found that of the people who make make less than 50K a year are on average younger than 37 years old while the people who make more than 50K a year are on average older than 37 years old. In addition to this, of the people who make less than 50K a year the younger group works less than 34.4 hours a week while of the people who make more than 50K a year the older group work less than 34.4 hours a week.
+
+This makes a lot of sense. The older we get the more work experience we have and we usually move up in the job market. As we increase our positions and work experience companies are more willing to pay people more. In addition younger people work less hours due to school and child labor laws and older people work less hours due to closer to retirement or a position that allows for it. 
+
+Focusing on only the data that seems most relatable to marrital status it was found that there were quite a few variables that were significant to divorce. Age, work class (job), some education level, race, hours per week, and income are all significant factors of divorce. 
+
+Education level often determines the work that someone has. The lower level education typically means lower level paying jobs. Government jobs, self employement, and no employement are all jobs that indicated in divorce. Lots of these are independent in nature which could be correlated to marrital status as well. Finally, an income of greater than 50K is correlated to divorce. Money can complicate things and it can also make someone able to support themself more comfortably. Both of those things could be correlated to why someone is/can be divorced. Age makes some sense because some people marry young for one reason or another and realize later that they need to divorce for one reason or another. Finally, hours per week makes a lot of sense. If someone works too much they may alienate themself from their family and, therefore, end up divorcing. 
+
+## Appendices
+### Techincal Appendice
+First Question:
+```{r}
+#Make a new df
+bin_income <- cencus
+#Make income binary
+bin_income$income <- ifelse(bin_income$income=="<=50K", 0, 1)
+
+#bin_income
+
+#Fit it to a binomial model
+q1_mod1 <- glm(income ~ age + hours.per.week, family = binomial(link = "logit"), data = bin_income)
+summary(q1_mod1)
+
+#Test other forms of the model to see if it improves/changes things
+#q1_mod2 <- glm(income ~ age * hours.per.week, family = binomial(link = "logit"), data = bin_income)
+#summary(q1_mod2)
+
+#rand_bin_income <- bin_income
+
+#q1_mod3 <- glm(income ~ age + hours.per.week, family = binomial(link = "logit"), data = rand_bin_income)
+#summary(q1_mod3)
+
+#Plot the age and hours worked against income
+p <- ggplot(bin_income) + 
+  geom_boxplot(aes(x=factor(income), y=age, col=hours.per.week>34.4)) +
+  xlab('income') + ylab('age')
+p
+```
+
+
+Second Question: 
+```{r}
+#Make a new df with marital status as an numeric value
+num_marriage <- transform(cencus,id=as.numeric(factor(marital.status)))
+#Make a new df with only divorced people
+div_df <- subset(num_marriage, (id == 1))
+
+#Fit the model
+q2_mod1 <- glm(id ~ age + workclass + education + race + hours.per.week + native.country + income, data = num_marriage, family = "poisson")
+summary(q2_mod1)
+```
+

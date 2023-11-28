@@ -1,0 +1,323 @@
+---
+title: "Module 6 Lab Examples"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE, message=FALSE}
+library(Amelia)
+library(broom)
+library(faraway)
+library(ggplot2)
+library(tidyverse)
+```
+
+
+This lab provides a brief overview of handling missing values in R and a discussion of imputation in a couple of simple settings.
+
+# Missing values in R
+
+R uses the special value `NA` to indicate a missing value.  Let's take a simple vector, with five values, the first of which is missing:
+
+```{r}
+x <- c(NA, 1, 3, 5, -99)
+```
+
+Missing values are contagious in R.  That means any calculation that involves a missing value will result in a missing value.  Take a look at what happens when you try to add `1` to `x` or, test if `x` is less than one:
+
+```{r}
+x + 1
+x < 1
+```
+
+The first element is missing in both examples. Any arithmetic or logical comparison with a missing value, will give you another missing value.  Think of a missing value as an unknown quantity.  If you don't know a value, you still don't know it if you add one.  If you don't know a value, you don't know if it is less than one.
+
+This leads to a slightly surprising behavior when you ask if a missing value is equal to `NA`:
+
+```{r}
+x == NA
+```
+Even for the missing value this is missing.  You might have expected `NA == NA` to be `TRUE` but it is missing instead.  The intuition: you are asking if this unknown value is equal to some other unknown value.  The simple fact is, you don't know.
+
+So, how do you find missing values?  R has an `is.na()` function that will return `TRUE` if a value is `NA`:
+
+```{r}
+is.na(x)
+```
+
+This provides one way to subset out the non-missing values
+```{r}
+x[!is.na(x)]
+```
+where `!` is the logical "not". 
+
+Occasionally, missing values will be coded with some other value in your data. For example, the `-99` might actually represent a missing value.  In order to ensure you don't treat this as the number -99, you should explicitly set any occurrences to missing.  You can achieve this by combing subsetting with assignment:
+```{r}
+x[x == -99] <- NA
+```
+This translates to "set the subset of `x` where the value is -99 to `NA`". And you can confirm it had the desired effect:
+```{r}
+x
+```
+
+Because arithmetic with missing values results in missing values, common summaries will often return a missing value, if even one entry is missing.  For example, look at the sum, mean, and standard deviation of `x`:
+
+```{r}
+sum(x)
+mean(x)
+sd(x)
+```
+
+These functions have an additional argument `na.rm` that when set to `TRUE` will remove the missing values (i.e equivalent to deletion of cases) before computing the summary.
+
+```{r}
+mean(x, na.rm = TRUE)
+```
+
+When working with modeling functions, you'll often find they have a `na.action` argument that specifies what should happen if missing values are encountered.  A common default is `na.omit`, which removes cases with missing values.  In particular that is what happens if you use data with missing values with `lm()`.  To examine this behavior let's put `x` in a data frame with a random `y`:
+```{r}
+df <- data.frame(x = x, y = rnorm(5), obs = 1:5)
+```
+
+Then you can fit a model with `lm()` and take a look at the summary:
+```{r}
+fit <- lm(y ~ x, data = df)
+summary(fit)
+```
+Notice the warning in the output `(2 observations deleted due to missingness)`, that indicates that two observations had missing values (either in `x` or `y`) and were excluded from the analysis.
+
+With this default behavior any observation level diagnostics will only be returned for observations that didn't have any missing values. 
+```{r}
+augment(fit, df)
+```
+In particular you only get three rows back (the three non-missing observations).  Occasionally, you want to keep the missing observations around, in which case setting `na.action` to `na.exclude` may be more appropriate.
+
+```{r}
+fit_2 <- lm(y ~ x, data = df, na.action = na.exclude)
+summary(fit_2)
+```
+
+The observations with missing values are still omitted from the modelling, so you get the exact same model fit, but they are retained in diagnostics,
+```{r}
+augment(fit_2, df)
+```
+albeit with missing values for anything that requires a complete case to compute.
+
+# Visualizing missing values
+
+Plotting commands will also often drop missing values with or without a warning.  `ggplot2` will warn you:
+```{r, messages = FALSE}
+qplot(obs, x, data = df)
+```
+
+But this makes it hard to visually explore where the missing values occur.   A simple strategy is to instead visualize whether values are missing by using `is.na()`:
+```{r}
+qplot(obs, is.na(x), data = df)
+```
+
+Another strategy (used in the lecture slides) is to add a rug to the plot (but this will fail if the observation is missing on all variables):
+  ```{r}
+qplot(obs, x, data = df) + 
+  geom_rug(data = filter(df, is.na(x)))
+```
+
+The "rug" is the small dashes on the axis (if there are a lot they tend to look like the tasseled edge of a rug).
+
+To explore the distribution of missing values over many variables, the author of this week's reading uses an "image" plot.  An image plot is a visual representation of a matrix (in this case the matrix `is.na(chmiss)`), each rectangle represents a cell, and `TRUE` becomes black and `FALSE` white:
+```{r}
+image(is.na(chmiss),axes=FALSE,col=gray(1:0))
+axis(2, at = 0:5/5, labels = colnames(chmiss))
+axis(1, at = 0:46/46, labels = row.names(chmiss), 
+las = 2)
+```
+
+
+If you prefer the `ggplot2` aesthetic, this same plot can be achieved by first reshaping the data in to a long format (using the `tidyr` function `gather()`), then using `geom_tile()`:
+```{r}
+chmiss$zip <- rownames(chmiss)
+chmiss_long <- gather(chmiss, variable, value, -zip)
+head(chmiss_long)
+
+qplot(zip, variable, data = chmiss_long, geom = "tile", 
+fill = is.na(value))
+```
+
+A few edits make that plot a little more readable:
+```{r}
+qplot(zip, variable, data = chmiss_long, geom = "tile", 
+fill = is.na(value)) +
+scale_fill_manual("missing?", 
+values = c(`TRUE` = "black", `FALSE` = "white")) +
+theme(axis.text.x = element_text(angle = 90))
+```
+
+# Imputation in a simple example
+
+In the lectures you learnt that mean imputation tends to preserve the sample mean, but influences other measures in a detrimental way.  To give you some concrete intuition let's look at mean imputation in a very simple setting: a single variable.
+
+To illustrate let's simulate 10 observations from a Normal(0, 1): 
+```{r}
+n <- 10
+x_miss <- rnorm(n)
+```
+
+And then randomly set two of the observations to be missing,
+```{r}
+x_miss[sample(n, size = 2)] <- NA
+x_miss
+```
+
+You now know that if you ask for the mean, you'll get a missing value
+```{r}
+mean(x_miss)
+```
+
+But you can get a mean dropping the missing values by adding the `na.rm` argument:
+  
+  ```{r}
+mean(x_miss, na.rm = TRUE)
+```
+
+If you do mean imputation, you replace any values that are missing with the mean of the non-missing values.  Let's create `x_mean_imputed` that is exactly `x_miss`:
+```{r}
+x_mean_imputed <- x_miss
+```
+Then replace the values that are missing with the mean of the non-missing values:
+```{r}
+x_mean_imputed[is.na(x_mean_imputed)] <- mean(x_miss, na.rm = TRUE)
+x_mean_imputed
+```
+
+This has the nice property that the sample mean of our imputed variable, is exactly the sample mean ignoring the missing values:
+```{r}
+mean(x_miss, na.rm = TRUE)
+mean(x_mean_imputed)
+```
+But, the sample standard deviation of our imputed variable:
+```{r}
+sd(x_mean_imputed)
+```
+is significantly smaller than the sample standard deviation ignoring the missing values:
+```{r}
+sd(x_miss, na.rm = TRUE)
+```
+
+
+Of course, you shouldn't let a single example convince you.  You can imagine you could repeat the process for many random samples where each time you randomly choose some values to be missing and then impute them using the mean.  Here's histogram I generated by doing this exact simulation, of the sample means of the imputed variables.  
+```{r, echo = FALSE}
+gen_data <- function(n, dist = rnorm, prop_missing = 0.2, ...){
+x <- dist(n, ...)
+x[sample(n, size = floor(prop_missing * n))] <- NA
+x
+}
+
+impute_mean <- function(x){
+x[is.na(x)] <- mean(x, na.rm = TRUE)
+x
+}
+
+imputed_x <- replicate(1000, impute_mean(gen_data(10)))
+means <- apply(imputed_x, 2, mean)
+sds <- apply(imputed_x, 2, sd)
+
+qplot(means) + geom_vline(xintercept = 0) + 
+labs(x = "Sample mean from mean imputed data",
+caption = "Based on simulated data from N(0,1), n = 10")
+```
+
+You know the true mean is 0 so I've added that to the plot.  On average, if the values are truly MCAR, mean imputation gives the right mean.
+
+Contrast this to this histogram of the sample standard deviation of the imputed variables for the same simulation:
+  
+  ```{r, echo = FALSE}
+qplot(sds) + geom_vline(xintercept = 1) +
+  labs(x = "Sample s.d. from mean imputed data",
+       caption = "Based on simulated data from N(0,1), n = 10")
+```
+
+The true standard deviation is 1, and you can see the sample standard deviations, on average, underestimate this standard deviation.  That is, mean imputation tends to lead to imputed variables that don't accurately represent the true variability.
+
+# Working through examples
+
+If you haven't already, you should also work through the code in the reading for this week before tackling the homework.  The author makes quite heavy use of `for` loops.  Here we will walk you through the example in Section 13.4.  If `for` loops are completely new to you, you might start with this shortish explanation: http://paleocave.sciencesortof.com/2013/03/writing-a-for-loop-in-r/
+  
+  
+First, recall the `chmiss` package that is used as an example in the reading and in the lecture slides.
+
+```{r}
+data(chmiss, package="faraway")
+head(chmiss)
+```
+
+In section 13.4 of the reading, the author discusses using the `Amelia` package to perform multiple imputation.  Here we will walk through that process.  We start by setting a random seed using the `set.seed()` function. We have used this function before--it makes it so that our "random" numbers are reproducible.  Then we use the `amelia` function to perform multiple imputation.  The `amelia` function has many optional arguments, but the first and most important argument is the dataset for which you would like to impute missing values.  The second argument, `m`, is the number of imputed datasets to create.  The `p2s` argument just tells the function whether to print out information about the process of imputation; the value `0` tells it not to print out that information. 
+
+```{r}
+set.seed(123)
+
+n.imp <- 25 # Set the number of imputed datasets
+chimp <- amelia(chmiss, m=n.imp, p2s=0)
+```
+
+The `amelia` function performs the multiple imputations: it will impute a full dataset `n.imp` (25) times, so there will be 25 datasets with different imputed values where the original dataset `chmiss` had missing values.  We can examine the contents of the `chimp` object a bit:
+
+```{r}
+names(chimp)
+```
+
+The `imputations` element is a `list` object that contains the imputed datasets.  To examine the first imputed dataset, we would need to extract the first element of that list.  Here we will look at the head of the first imputed dataset.  To select elements of a `list`, we use double brackets, `[[ ]]`:
+
+```{r}
+head(chimp$imputations[[1]])
+```
+
+
+Now compare to the head of the second imputed dataset:
+
+```{r}
+head(chimp$imputations[[2]])
+```
+
+And compare both imputed datasets to the head of the original dataset with missing values:
+
+```{r}
+head(chmiss)
+```
+
+Note that the value for `involact` in the first row and the values for age in rows 3 and 4, which were missing in the original dataset `chmiss`,  have all been filled in with numbers in the imputed datasets, but those numbers differ for each new imputed dataset.
+
+Our next step is to fit a linear model to each of the imputed datasets.  Here, as an example, we fit a linear model to just the first imputed dataset:
+
+```{r}
+newMod <- lm(involact ~ race + fire + theft + age, data=chimp$imputations[[1]])
+coef(newMod)
+summary(newMod)
+coef(summary(newMod))[,2] # Extracts the SE column from the coefficients table
+```
+
+Now we will do this same process for each of the `n.imp = 25` imputed datasets. We will then extract the coefficient estimates and the standard error of those estimates, and store those values.  
+
+First we set up matrices that will store the coefficient estimates and the standard errors.  We will do it slightly differently than the book did: instead of just appending each new coefficient estimate onto the current matrix and adding rows as we go, we will create 'empty' matrices that have 25 rows (one for each imputed dataset) and 5 columns (one for each coefficient, including intercept).  We will fill the jth row of these matrices with the estimates and ses, respectively, from the jth imputed data set.
+
+```{r}
+betas <- matrix(0, nrow=n.imp, ncol=5)
+ses <- matrix(0, nrow=n.imp, ncol=5)
+```
+
+Now we use a `for` loop to fit a model to each of the imputed datasets. 
+
+```{r}
+for(i in 1:n.imp){
+  newMod <- lm(involact ~ race + fire + theft + age, data=chimp$imputations[[i]])
+  betas[i,] <- coef(newMod)
+  ses[i,] <- coef(summary(newMod))[,2]
+}
+```
+ 
+Finally, we use the `mi.meld` function to get overall estimates of the coefficients and their standard errors:
+
+```{r}
+mi.meld(q=betas, se=ses)
+```
+
+Note that the results may not exactly match the numbers in the textbook due to the random imputation and the different implementations in different versions of the package (but they should be quite close).  You should, however, get the same values each time you run this code, as long as you set the random.seed to the same value right before you run it each time.
+

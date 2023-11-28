@@ -1,0 +1,259 @@
+---
+title: "Module 3 Lab"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(ggplot2)
+library(backports)
+library(broom)
+library(Sleuth3)
+couples <- read.csv("Age.csv")
+respRate <- read.csv("RespRateData.csv")
+knitr::opts_chunk$set(echo = FALSE, exercise.eval = FALSE)
+#tutorial_options(exercise.checker = grader::check_exercise)
+```
+
+
+## Simple Linear Regression
+This lab guides you through the mechanics of simple linear regression. This includes fitting the model, exploring the returned fit, and obtaining confidence and prediction intervals. We use husband and wife data (`Age.csv`) from OpenIntro Statistics, provided for you in the Lab instructions.
+
+We have already loaded the data into the variable `couples`, let's take a look at it.
+
+```{r head-couples, exercise=TRUE}
+head(couples)
+```
+
+The dataset has columns for the ages of the husband and wife and for their heights. Let’s try to use the husband’s age to predict his wife’s age. We start with a scatterplot of the data. 
+
+**Use `qplot` or another method of your choosing to make a scatterpolot with husband's age (`HAge`) on the x-axis and wife's age (`WAge`) on the y-axis.**
+
+```{r age-scatterplot, exercise=TRUE}
+
+
+```
+
+```{r age-scatterplot-hint}
+qplot(HAge, WAge, data = couples)
+```
+
+The explanatory variable `HAge` is on the x-axis, and the response variable `WAge` is on the y-axis; this arrangement is customary. Also notice that `qplot()` removed the rows with missing data before plotting. This is helpful, but we should always be careful to investigate these missing values, and be careful to note how they may affect our inference (much more on this later in the course).
+
+
+### Fitting a Simple Linear Model
+
+As far as the relationship between spousal ages, what do we see? There is a strong, positive linear correlation between a husband’s age and his wife’s age. This makes sense, we generally think about people who are married being of similar ages. Let’s try to quantify this relationship with a simple linear regression model.
+
+The function `lm()`, which stands for “linear model”. The syntax for the function is `lm(response ~ explanatory, data = my_data)`. Notice that the structure for this formula in `lm()` is response ~ explanatory. That is, the column containing the response is on the left hand side of the ~ and the explanatory of the right hand side. 
+
+**Use `lm()` to fit a model object with `WAge` as the response, `HAge` as the explanatory, and the `couples` dataframe as the data. Store this model as the variable `fit`.**
+
+
+```{r lm-fit, exercise=TRUE}
+fit <- #Put your lm() function here
+```
+
+```{r lm-fit-hint}
+fit <- lm(WAge ~ HAge, data = couples)
+```
+
+```{r, include=FALSE}
+fit <- lm(WAge ~ HAge, data = couples)
+```
+
+We stored the fitted model as `fit`, and you will notice there is no output. To get lm() to share, we need another line of code.
+
+```{r summary-fit, exercise=TRUE}
+summary(fit)
+```
+
+Starting at the top, we see: `Call:`, followed by the model that was fit inside `lm()`; then `Residuals:` followed by a five number summary for the residuals; then `Coefficients:`, followed by the coefficient estimates given in tabular form along with their respective standard errors, t-statistics, and associated p-values. Recall the model we fit,
+  $$
+  WAge_i = \beta_0 + \beta_1HAge_i + \epsilon_i,
+  $$
+
+where it is assumed that $\epsilon_i \overset{iid}{\sim}N(0, \sigma^2)$.  The R output above gives us a table with the estimates of the intercept and slope: $\hat\beta_0 = 1.57$, and $\hat\beta_1 = 0.91$, along with their corresponding standard errors and the statistic and p-value for the t-test that the parameter is zero.
+
+Next is an estimate of the standard deviation of the errors, $\hat\sigma = 3.95$,  R labels this the `Residual standard error`. This value is on the same scale as the response and gives us an idea of the spread of the response values around the regression line. In this example, the wife’s age has an estimated standard deviation of about 4 years around the age predicted from the model. In the same line, the output gives the degrees of freedom on which the estimate was based.
+
+The second-to-last line of the R output gives two versions of $R^2$ (`Multiple R-squared` and `Adjusted R-squared`), which tell us the proportion of variation in the response explained by the model (`Multiple R-squared`), and a similar quantity after being adjusted for the number of predictor variables (`Adjusted R-squared`). The final line gives the F-statistic and p-value for the overall significance of the regression model, comparing the model we fit to a model that only includes an intercept term.
+
+We can replot our points, but this time with the regression line overlaid.
+
+```{r plot-fit-qplot, exercise = TRUE}
+qplot(HAge, WAge, data = couples) + geom_smooth(method = "lm")
+```
+
+You will notice the shaded bands around the regression line, these are 95% confidence intervals for the mean wife age at each husband age. Later in this lab we learn how to calculate confidence intervals.
+
+## Residuals
+
+The stored regression object `fit` is actually a list with 13 elements. Similarly, `summary(fit)` is also a list, with 12 elements!
+
+```{r names-fit, exercise=TRUE}
+names(fit) # Show all 13 elements
+names(summary(fit))
+```
+
+The residuals element contains a vector of the residuals. We could pull out that element (e.g. `fit$residuals`) or use the `residuals()` function to get them (e.g. `residuals(fit)`). However, we usually want to keep the residuals together with all the other properties of the observations, so we recommend using the augment function in the package `broom`.
+
+```{r augment-broom, exercise=TRUE}
+head(augment(fit))
+```
+
+`augment()` takes a model object as its first argument, and returns a new data frame with some columns in addition to the columns used in the model: `.resid` the residuals, `.fit` the fitted values and a few more we’ll learn about in later modules. We’ll want to use this new data frame in our residual analysis plots, so let’s go ahead and save it to `couples_diag` (here `diag` is short for diagnostic).
+
+**Use `augment` on the model object `fit` and save it to the variable `couples_diag`.**
+
+```{r couples-diag, exercise=TRUE}
+couples_diag <- #Your code here
+```
+
+```{r couples-diag-hint}
+couples_diag <- augment(fit)
+```
+
+```{r, include=FALSE}
+couples_diag <- augment(fit)
+```
+
+We can use the residuals to evaluate the validity of the model we fit, with regard to the model assumptions. If there is a reason to doubt the assumptions, it often reveals itself in a systematic structure in a plot of residuals versus fitted values, or residuals versus explanatory variable values.
+
+**Make two plots with `.resid` on the y-axis: one with `HAge` on the x-axis, and the other with `.fitted` on the x-axis.**
+
+```{r residual-plots, exercise=TRUE}
+
+```
+
+```{r residual-plots-hint}
+qplot(HAge, .resid, data = couples_diag)
+qplot(.fitted, .resid, data = couples_diag)
+```
+
+**What are you looking for?** You are looking for:
+1) Residuals to be centered vertically around zero all the way from left to right in both plots, and 
+2) The spread around the y=zero line to be constant from left to right. 
+
+Neither plot shows any systematic change in the variance across husband ages, or any non-linear structure. More generally, there is no observable pattern or trend of any kind in the residuals. These plots do not raise any red flags, so we proceed to confidence intervals and prediction intervals.
+
+
+## Prediction and Confidence Intervals
+
+We may want confidence intervals for the estimated parameters. The function `confint()` will return these.
+
+```{r confint, exercise=TRUE}
+confint(fit)
+```
+
+The output is self-explanatory. The default is a 95% confidence interval, but there is a level argument to specify different confidence levels.
+
+A second useful function is `predict()`, which calculates confidence and prediction intervals for specified values of the explanatory variable. If you pass predict our model, it will produce point estimates and confidence intervals for the mean at all explanatory variable values in the original dataset.
+
+```{r predict, exercise=TRUE}
+head(predict(fit, interval = "confidence"))
+```
+
+If you want confidence intervals at specific values you need to provide predict with a new data frame that contains only those specific values. For example, what are the estimated mean wife ages for 30, 35, and 40-year-old husbands?
+
+First we create a new data frame with a HAge column (careful this column name needs to match exactly the name of the column we used in our model), containing the values 30, 35 and 40:
+
+```{r new-data, exercise=TRUE}
+new.couples <- data.frame(HAge = c(30, 35, 40))
+```
+
+```{r include=FALSE}
+new.couples <- data.frame(HAge = c(30, 35, 40))
+```
+
+**Now use the `predict()` function on the model object `fit`, with the `newdata` argument equal to `new.couples` and the `interval` argument equal to `"confidence"`.**
+
+```{r predict-new-conf, exercise=TRUE}
+
+```
+
+```{r predict-new-conf-hint}
+predict(fit, newdata = new.couples, interval = "confidence")
+```
+
+On the other hand, what if we want to predict the wife age of one randomly selected husband for each of those ages?
+
+**Use `predict` again with the same data, but change the `interval` argument to `"prediction"`.**
+
+```{r predict-new-pred, exercise=TRUE}
+
+```
+
+```{r predict-new-pred-hint}
+predict(fit, newdata = new.couples, interval = "prediction")
+```
+
+
+Notice that in the first column the point estimates are the same. The prediction intervals, however, are much wider than the confidence intervals, as you can see in columns two and three.
+
+
+## Lack-of-Fit F-test
+
+Now we will consider a new dataset (`RespRateData.csv`), which contains the respiration rate in breaths per minute, and the age in months, of 618 children between the ages of 0 and 3 years (36 months).  This dataset is a slight modification of a dataset (`ex0824`) from the `Sleuth3` library: in this data, age in months has been rounded to be an integer between 0 and 36.  This results in multiple observations for the different age values, which means we can perform a lack-of-fit test to assess whether a linear model relating respiration rate to age is appropriate. 
+
+We have already loaded the data using `respRate <- read.csv("RespRateData.csv")`, so now the data is available in the object `respRate`.  
+
+First we can examine the head of the data frame:
+
+```{r head-respRate, exercise=TRUE}
+head(respRate)
+```
+
+Now we will fit two different models: first a simple linear regression model where `Age` is treated as a continuous predictor, and then a separate-means model, where `Age` is treated as a categorical (`factor`) predictor.
+
+**First, use `lm()` to fit a simple linear regression model, where we model Respiration Rate (`Rate`) as a linear function of Age (`Age`).**
+
+```{r resp-rate-slr, exercise=TRUE}
+mod_slr_respRate <- # Your code here
+```
+
+```{r resp-rate-slr-hint, exercise=TRUE}
+mod_slr_respRate <- lm(Rate ~ Age, data=respRate)
+```
+
+```{r, include=FALSE}
+mod_slr_respRate <- lm(Rate ~ Age, data=respRate)
+```
+
+**Now, use `lm()` and `factor()` to fit a linear regression model of Respiration Rate with the predictor  Age treated as a categorical variable.**
+
+```{r resp-rate-sep, exercise=TRUE}
+mod_sep_respRate <- # Your code here
+```
+
+```{r resp-rate-sep-hint, exercise=TRUE}
+mod_sep_respRate <- lm(Rate ~ factor(Age), data=respRate)
+```
+
+```{r, include=FALSE}
+mod_sep_respRate <- lm(Rate ~ factor(Age), data=respRate)
+```
+
+Finally, we compare these two models using the lack-of-fit F-test, which can be performed using the `anova()` function and the two models we created above.
+
+**Use the `anova()` function to compare the two models you just fit.**
+
+```{r lack-of-fit, exercise=TRUE}
+# Your code here
+```
+
+```{r lack-of-fit-hint, exercise=TRUE}
+anova(mod_slr_respRate, mod_sep_respRate)
+```
+
+Based on the results of this lack-of-fit F-test, we would reject the null hypothesis that the linear model is adequate (p-value = 0.006, F-statistic = 1.74 on 35 and 581 degrees of freedom).  We would therefore conclude that there is some departure from linearity in the relationship between respiration rate (`Rate`) and age (`Age`).
+
+
+
+
+
+

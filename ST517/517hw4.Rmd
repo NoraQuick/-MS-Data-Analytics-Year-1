@@ -1,0 +1,88 @@
+---
+title: "ST517-HW3"
+author: Nora Quick
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+```
+
+1. This question uses a dataset from the faraway package to perform a Lack of Fit test on a model we will fit. Use this code to load the dataset. You may need to install the ‘faraway‘ package if you don’t already have it.
+
+```{r}
+data(corrosion, package = "faraway")
+```
+
+   (a) We are interested in modelling the weight loss due to corrosion as a function of Iron content, that is, Iron content is the explanatory variable, and weight loss is the response. Create a scatterplot of the data and describe the relationship you see.
+   
+```{r}
+Fe <- corrosion$Fe
+loss <- corrosion$loss
+
+qplot(loss, Fe, data = corrosion)
+```
+   
+The relationship between the Iron content and weight loss is linear. The longer it corrodes the more weight it loses in a linear fashion.
+   
+   (b) Fit a simple linear regression model to the data. State the mathematical form of the model and report the parameter estimates $$ˆ\beta0$$ , $$ˆ\beta1$$ , and $$ˆ\sigma$$ .
+   
+```{r}
+fit <- lm(loss ~ Fe, data = corrosion)
+summary(fit)
+```
+   
+$$ˆ\beta0$$ = 129.79, $$ˆ\beta1$$ = -24.02, and $$ˆ\sigma$$ = 3.06. The mathmatical form is y= mx + b or a linear model. 
+   
+   (c) In the context of the data, interpret $$ˆ\beta1$$ in one sentence.
+   
+$$ˆ\beta1$$ is the slope, therefore, it is the rate in which the Iron will lose weight due to corrotion. 
+   
+   (d) Repeat part (a), but this time include the regression line and confidence bands for the mean weight loss due to corrosion.
+   
+```{r}
+qplot(loss, Fe, data = corrosion) + geom_smooth(method = "lm")
+```
+
+   (e) Now plot the residuals (y-axis) against the explanatory variable iron content (x-axis). Are the residuals centered around zero at all values of iron content?
+   
+```{r}
+qplot(Fe, loss, data = corrosion)
+```
+   
+Yes, it appears that all of the residuals average out to be around zero of all iron content.
+   
+   (f) Give the null and alternative hypothesis for a Lack of Fit test.
+
+$$H_0:\mu = 0$$
+$$H_A:\mu != 0$$
+
+   (g) Perform a lack of fit test on our model. Give the F-statistic and p-value. What do you conclude? *Hint: See Lecture 6 from this module, use factor() to help fit the separate means model in lm(), and use anova() to compare the two models.
+   
+```{r}
+slr_corr <- lm(loss ~ Fe, data=corrosion)
+sep_corr <- lm(loss ~ factor(Fe), data=corrosion)
+
+anova(slr_corr, sep_corr)
+```
+   
+After running anova() we can see that the F-statistic is 9.28 and the p-value is 0.0086. With this I conclude that the null hypothesis is true and that the data is linear. This means that there is a relationship between the weight or Iron based on the time it's corroded.
+   
+   (h) In one sentence, why is it necessary for the Lack of Fit test that there are independent replicate responses at some values of the explanatory variable?
+
+We need it for an estimate of the baseline of the Iron to make up for the random process of testing. 
+
+2. In the plots below, identify the SLR assumption that has been violated and explain your reasoning.
+
+   (a) Plot 1: Fails the assumption of linearity (that Y's fall on the staright line function of the X's).
+   
+   ![Plot 1](1.png)
+   
+   (b) Plot 2: Fails the assumption of constant variance (that e's have the same variance).
+   
+   ![Plot 2](2.png)
+   
+   (c) Plot 3: Fails the assumption of normal distrubution.
+   
+   ![Plot 3](3.png)

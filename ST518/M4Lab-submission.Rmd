@@ -1,0 +1,148 @@
+---
+title: "Module 4 Lab Submission"
+author: "Nora Quick"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(broom)
+library(ggplot2)
+library(MASS)
+library(Sleuth3)
+```
+
+First, we will explore the Brain size data in the data set `case0902` from the `Sleuth3` library. You can read more about this data set by viewing the help file:
+
+```{r echo=TRUE}
+help(case0902)
+head(case0902)
+```
+
+1. **Fit a linear model with `Brain` as the response variable, and `Body`, `Gestation`, and `Litter` as the predictor variables.**
+
+```{r echo=TRUE}
+head(case0902)
+
+Brain_fit <- lm(Brain ~ Body + Gestation + Litter, data = case0902)
+summary(Brain_fit)
+```
+
+2. **Calculate the case influence measures for this model using the `augment()` function from the package `broom`.  Which species has the highest leverage for this model? Which species has the highest Cook's Distance?**
+
+```{r echo=TRUE}
+Brain_diag <- augment(Brain_fit)
+head(Brain_diag)
+```
+
+```{r}
+Brain_diag[Brain_diag$.hat > 0.4, ]
+```
+
+Based on this R code we can see that litter 1 has the highest leverage in this model. In addition to that we can see from the .cooksd column that litter 1 also has the highest cook's distance.
+
+  
+
+Now we will continue investigating multicollinearity. Recall the simulated scenario considered in the `M4Lab-examples.Rmd` file, where we followed these steps:
+
+1. Define $\beta_{0} = 0.5$, $\beta_{1} = 0.3$, and $\beta_{2} = 0.7$
+2. Define the mean of $X_{1}$ and $X_{2}$
+3. Generate correlated/uncorrelated $X_{1}$ and $X_{2}$ data
+4. Generate the response variable; use model equation and add N(0,1) noise
+5. Fit a MLR model
+6. Extract the coefficient estimate; $\hat{\beta}_{0}$, $\hat{\beta}_{1}$, or $\hat{\beta}_{2}$
+7. Repeat steps (4) through (6) many times.
+
+We used a function, included here, to perform steps 4. through 6., and then repeated that function many times (step 7.)
+
+```{r, echo=TRUE}
+fitmodel <- function(X1, X2, beta0, beta1, beta2){
+  n <- length(X1)
+  Y <- beta0 + beta1*X1 + beta2*X2 + rnorm(n, 0, 1) # Generate/calculate response 
+  fit <- lm(Y ~ X1 + X2) # Fit the model
+  fit$coefficients # Return estimated coefficient values
+}
+```
+
+To run this function, we have to define the coefficient values (Step 1.), and set the mean and covariance matrix to generate predictor variables (Steps 2. and 3.).  
+
+```{r, echo=TRUE}
+# Step 1
+beta0 <- 0.5 # define beta_0
+beta1 <- 0.3 # define beta_1, 
+beta2 <- 0.7 # define beta_2
+
+# Step 2
+mu <- matrix(c(0,0)) # Set means for X_1, X_2
+sigma1 <- matrix(c(1, 0, 0, 1), ncol = 2) # Cov Matrix: Cov(X_1, X_2) = 0
+
+# Step 3
+set.seed(1822) # Francis Galton born, invented regression concept
+
+n <- 250
+X <- mvrnorm(250, mu=c(0,0), Sigma=sigma1)
+X1 <- X[,1]
+X2 <- X[,2]
+
+# Step 7
+beta_estimates <- replicate(10000, fitmodel(X1, X2, beta0, beta1, beta2))
+```
+
+Finally, we calculated the standard deviation of the estimates of $\beta_0$ that resulted from these simulated datasets:
+
+```{r, echo=TRUE}
+sd(beta_estimates[1,])
+```
+
+3. **Now it is your turn to calculate the standard deviation of the estimates of  $\beta_{1}$ and $\beta_{2}$ in the uncorrelated case; and $\beta_{0}$, $\beta_{1}$, and $\beta_{2}$ in the correlated case. As you run the simulations, fill in the standard errors in the table below. Note: In the correlated case, use `sigma2 <- matrix(c(1, 0.9, 0.9, 1), ncol = 2)` to define the covariance matrix.**
+
+| **Parameter**  | **$SE(\hat\beta_i)$** |
+|:--------------:|:---------------------:|
+| *Uncorrelated* |                       |
+|   $\beta_0$    |          0.063        |
+|   $\beta_2$    |          0.061        |
+|   $\beta_3$    |          0.062        |
+|  *Correlated*  |                       |
+|   $\beta_0$    |          0.063        |
+|   $\beta_2$    |          0.068        |
+|   $\beta_3$    |          0.065        |
+
+
+```{r}
+# Step 1
+beta0 <- 0.5 # define beta_0
+beta1 <- 0.3 # define beta_1, 
+beta2 <- 0.7 # define beta_2
+
+# Step 2
+mu <- matrix(c(0,0)) # Set means for X_1, X_2
+sigma1 <- matrix(c(1, 0, 0, 1), ncol = 2) # Cov Matrix: Cov(X_1, X_2) = 0
+
+# Step 3
+# set.seed(1822) # Francis Galton born, invented regression concept
+
+n <- 250
+X <- mvrnorm(250, mu=c(0,0), Sigma=sigma1)
+X1 <- X[,1]
+X2 <- X[,2]
+
+# Step 7
+beta_estimates <- replicate(10000, fitmodel(X1, X2, beta0, beta1, beta2))
+
+# SD
+sd(beta_estimates[1,])
+```
+
+
+4. **The variances (and therefore standard deviations) of $\hat{\beta}_{1}$ and $\hat{\beta}_{2}$ are much larger when $X_1$ and $X_2$ are correlated than when they are uncorrelated. Does it make sense that $\hat{\beta}_{0}$ is unaffected? Explain your reasoning.**
+
+Yes, because we have to have one base situation that no matter if they're correlated or uncorrelated the data follows the same pattern. 
+
+5. **Recall the sample VIFs calculated (in `M4Lab-examples.Rmd`) for some simulated data in the correlated case:**
+```
+      X1       X2 
+5.304359 5.304359 
+```
+**Compare the variances (*squared standard deviations*) in the table above for the correlated predictor setting to the variances for the uncorrelated predictor setting: what is the ratio of the variance of $\hat{\beta}_1$ in the correlated predictor setting to the variance of $\hat{\beta}_1$ in the uncorrelated predictor setting?  Similarly, what is the variance of $\hat{\beta}_2$ in the correlated predictor setting to the variance of $\hat{\beta}_2$ in the uncorrelated predictor setting?  Do these ratios seem close to the VIFs that we calculated?**
+
+The correlated beta_1 is about 0.007 larger than the uncorrelated and the correlaed bata_2 is 0.003 larger than the uncorrelated one. It does not appear that these ratios seem close to the VIFs that we calculated in the lab documentation.

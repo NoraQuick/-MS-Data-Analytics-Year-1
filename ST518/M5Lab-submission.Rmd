@@ -1,0 +1,99 @@
+---
+title: "Module 5 Lab Submission"
+author: "Nora Quick"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(broom)
+library(ggplot2)
+library(MASS)
+library(Sleuth3)
+```
+
+Again we consider the Brain size data in the data set `case0902` from the `Sleuth3` library. You can read more about this data set by viewing the help file:
+
+```{r echo=TRUE}
+help(case0902)
+head(case0902)
+```
+
+In Lecture 2 of this Module, we considered modeling all four variables on the log scale, and we compared two models: a full model with log-Body, log-Gestation, and log-Litter as predictors, and a reduced model with only log-Body as a predictor.
+
+1. **Fit the two models described above (and as shown on slide 15 of Lecture 2).**
+
+```{r echo=TRUE}
+full_model <- lm(log(Brain) ~ log(Body) + log(Gestation) + log(Litter), data = case0902)
+
+reduced_model <- lm(log(Brain) ~ log(Body), data = case0902)
+```
+
+Now suppose we have four new species, with the following values of Body, Gestation, and Litter:
+
+| Species | Body | Gestation | Litter |
+|:-------:|:----:|:---------:|:------:|
+| A       | 1    | 50        | 1      |
+| B       | 1    | 50        | 2      |
+| C       | 1    | 150       | 1      |
+| D       | 50   | 50        | 1      |
+
+
+2. **Create a new data frame with these values, and use the `predict()` function to predict the log-brain size for these new species.**
+
+```{r echo=TRUE}
+same_gest <- data.frame(
+  Species = rep(c('A', 'B', 'C', 'D'), 4),
+  Body = rep(c(1, 1, 1, 50), each = 4),
+  Gestation = rep(c(50, 50, 150, 50), each = 4),
+  Litter = rep(c(1, 2, 1, 1), each = 4)
+)
+
+# same_gest
+```
+
+```{r echo=TRUE}
+cbind(same_gest, pred_log_energy = predict(full_model, newdata = same_gest))
+```
+
+```{r echo=TRUE}
+cbind(same_gest, pred_log_energy = predict(reduced_model, newdata = same_gest))
+```
+
+
+3. **Obtain confidence intervals for the mean log-brain size of the new species above, using the `interval = "confidence"` argument in the `predict()` function.**
+
+```{r}
+ci_full_model <- predict(full_model, newdata = same_gest, interval = "confidence")
+ci_full_model
+```
+
+```{r}
+ci_reduced_model <- predict(reduced_model, newdata = same_gest, interval = "confidence")
+ci_reduced_model
+```
+
+
+4. **Obtain prediction intervals for the log-brain size of the new species above, using the `interval = "prediction"` argument in the `predict()` function.**
+
+```{r}
+pi_full_model <- predict(full_model, newdata = same_gest, interval = "prediction")
+pi_full_model
+```
+
+```{r}
+pi_reduced_model <- predict(reduced_model, newdata = same_gest, interval = "prediction")
+pi_reduced_model
+```
+
+
+5. **Compare the reduced model to the full model using the AIC and BIC measures.**
+
+```{r}
+AIC_comp <- AIC(full_model, reduced_model)
+AIC_comp
+```
+```{r}
+BIC_comp <- BIC(full_model, reduced_model)
+BIC_comp
+```

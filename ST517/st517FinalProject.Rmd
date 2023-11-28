@@ -1,0 +1,131 @@
+---
+title: "ST517-Final Project"
+author: Nora Quick
+output: pdf_document
+---
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(Amelia)
+library(broom)
+library(faraway)
+library(ggplot2)
+library(leaps)
+library(tidyverse)
+library(MASS)
+library(Sleuth3)
+```
+
+```{r}
+housing = read.csv("OR_acs_house_occ.csv", header=TRUE);
+#str(OR);
+#head(housing);
+```
+
+1. Do people living in apartments pay less on electricity than those living in houses? How much? Make sure you adjust for (at least) the number of bedrooms and number of occupants in the household.
+
+```{r}
+new_housing <- filter(housing, housing$NP >= 1 & housing$BDSP == 5 & housing$BLD != "Mobile home or trailer")
+```
+
+I first filtered down the data as required to the building having one or more people living in it, 5 bedrooms (based on the information I gave in the Project Strategy), and removing all buildings that weren't a housing unit or apartment unit.
+
+```{r}
+m1 <- lm(log(ELEP) ~ BLD + NP, data = new_housing)
+summary(m1)
+```
+
+Here I don't add in number of bedrooms because I have already narrowed it down to only 5 bedrooms so all data seen here should be 5 bedrooms.
+
+```{r}
+confint(m1)
+```
+
+For the next part we want to look at apartment vs. housing. This is similar to the gender comparisons in module 5 where we want to look at $\hat{\beta}_1$ which there was males. However, here we have two housing I chose to make the $\hat{\beta}_1$ equal to apartments (3-4 Apartments).
+
+```{r}
+exp(0.19901)
+```
+ 
+Based on this outcome our answer to the question would be that we have a 95% confidence that people living in apartments pay more on electricity than than people living in houses. They pay about 22% more on electricity based on the outcome above. 
+
+This does seem a bit wrong as logically I would say that people living in houses pay more than people living in apartments. However, I did narrow down the data quite a bit which skews the data. In addition to that we can see that the number of people is quite significant in determining how much is spent on electricity every month.
+
+```{r}
+anova(m1)
+```
+
+From this ANOVA test we can see that the number of people in actually the most determening factor about how much a household/apartment for electricity not building. 
+
+```{r}
+det_mean <- mean(new_housing$ELEP[new_housing$BLD == 'One-family house detached'])
+att_mean <- mean(new_housing$ELEP[new_housing$BLD == 'One-family house attached'])
+house_mean <- det_mean + att_mean
+house_mean
+
+two_mean <- mean(new_housing$ELEP[new_housing$BLD == '2 Apartments'])
+tf_mean <- mean(new_housing$ELEP[new_housing$BLD == '3-4 Apartments'])
+apt_mean <- two_mean + tf_mean
+apt_mean
+```
+
+Because I didn't believe my answers I decided to look through my whole filtered table and found all the houses and apartments and found the mean of all the electic bills. I found that based on the filtered data I have apartments do pay more for electicity than houses.
+
+```{r}
+diff <- 440 - 300.177
+diff
+```
+
+How much? Apartments pay about $139.8 more than houses on average. 
+
+
+2. Create a model that could be used to predict electricity costs for a household in Oregon.
+
+```{r}
+pred_data <- within(new_housing, rm(TYPE, BDSP, BLD))
+pred_data <- na.omit(pred_data)
+
+apply(pred_data, 2, function(x) length(unique(x)))
+```
+
+For the first part of this question I had quite a large issue with variables that were not working with the data. With some diffing I found that anything with only 1 unique value needed to be removed. After this I needed to remove any NAs. This caused more variables to only have 1 unique value so I removed that as well and was finally left with a set of data I could work with.
+
+I decided to use 39 for my nvmax because of the length of unique variables for ELEP.
+
+```{r}
+set.seed(1)
+
+train <- pred_data %>% sample_frac(0.5)
+test <- pred_data %>% setdiff(train)
+
+regfit.best_train <- regsubsets(ELEP ~ ., data = train, nvmax = 39)
+regfit.best_train_summary <- summary(regfit.best_train)
+
+test_mat <- model.matrix(ELEP ~ ., data = test)
+
+val_errors <- rep(NA, 39)
+
+for(i in 1:39){
+  coefi <- coef(regfit.best_train, id = 1)
+  pred <- test_mat[,names(coefi)] %*% coefi
+  val_errors[i] <- mean((test$ELEP - pred)^2)
+}
+
+#val_errors
+```
+
+This model created finds the predicted electrcity cost by splitting the prediction dataset into two halves. The first half is for prediction and the second half is for testing. It was found that it predicted about $8821.6.
+
+   
+3. Discuss the differences in your approach to questions 1 and 2. Why are different approaches required? What challenges did you face, and how did they compare across the two tasks?
+
+My approach for question one required quite a bit of editing down data due to the descibed necessity for it. I needed to make sure that I had the number of occupants and rooms that I wanted and then narrowed down the living units to what I wanted to look at. This causes a limitiation to the data shortly descibed in question 1. To explain again, the limitations narrow down the outcome we see and it may not truly represent the real (unedited) data.
+
+My approach for question two relied upon the data I had edited down in question one. In addition to that I needed to delete more data (descibed why in question 2). Once the data was severly limited down I was able to split the data in half to predict and test the data. With the data split in half it was even more limited to what it could predict. In addition to that I found that the limited initial data caused issues with the additional limited data and it would have been best not to use the same data. 
+
+The difference between the two was based upon the data we looked at. Qusetion one had limitations for a reason and question two had limitations that required elimination. In addition to the approaches being different because of quality of data, they were different in a way of finding one based on all data and one based on halving the data.
+
+The different approaches were required because they were needed to answer the questions. The first question required limitations because of desired narrowing and the second because of required narrowing. I couldn't predict the model with all the data given as some of it didn't work in the formatting. 
+
+I had challenges for each of the questions but they were similar in design. For question one I had challenges because I needed to limit the data and I did it based on research I did about the Oregon housing market. I wanted to find exact numbers which I had to find a way to reasonably narrow down to still work within the data. Question two had a similar challenge because I needed to narrow down the variables but this time due to the regsubsets function not liking my variables. After quite a bit of looking I found that I needed to eliminate all vairables that only had one unique variable and all rows that were NA. This finally allowed me to predict the data I wanted but the removal process took some time. Overall, both tasks has challenges based on data removal/narrowing so that I was always looking at the data I wanted.
+

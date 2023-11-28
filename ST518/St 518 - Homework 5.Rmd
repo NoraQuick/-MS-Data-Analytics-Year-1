@@ -1,0 +1,104 @@
+---
+title: "ST 518 - Homework 5"
+author: Nora Quick
+output: pdf_document
+---
+
+```{r setup, include=FALSE, message=FALSE}
+library(magrittr)
+library(vcdExtra)
+library(tidyverse)
+library(ggplot2)
+library(MASS)
+library(glm2)
+library(Sleuth3)
+```
+
+
+# R Question:
+## 1. Using Poisson log linear regression, test for independence between obesity and CVD death outcome. How does your answer compare to a chi-square test on the same data?
+```{r}
+obesity <- expand.grid(
+  Obesity = factor(c("Obese", "Notobese"), levels = c("Obese", "Notobese")),
+  Dead = factor(c("Deaths", "NonDeaths"), c("Deaths", "NonDeaths")))
+obesity$Freq <- c(16, 7, 2045, 1044)
+obesity_tab <- xtabs(data = obesity, Freq ~ Obesity + Dead)
+
+ftable(obesity_tab)
+```
+
+```{r}
+mod1 <- glm(data = obesity_tab, Freq ~ Obesity + Dead, family = poisson)
+summary(mod1)
+
+mod2 <- glm(data = obesity_tab, Freq ~ Obesity + Dead + (Obesity * Dead), family = poisson)
+summary(mod2)
+```
+
+```{r}
+chisq.test(obesity_tab)
+```
+
+As we can see from both models above the obesity and death values indicate that they are significant on their own but together (as seen in the second model) together there is no significance. We can also see this in the chi-squared test with a large p-value indicating the variables are independent of each other. 
+
+
+
+## 2. Be sure to examine residuals from each of these models. How do the models compare? Please be specific. Is there evidence of over dispersion? If so, fit another model and report results from that model. If not, why not?
+
+```{r}
+work <- case2201
+work
+```
+
+### a. simple linear regression after taking a square root transformation of the number of successful mat-ings
+
+```{r}
+work$sq_mat <- sqrt(work$Matings)
+
+mod3 <- lm(data = work, Age ~ sq_mat) 
+summary(mod3)
+```
+
+### b. simple linear regression after taking a logarithmic transformation (after adding 1)
+
+```{r}
+plus <- work$Matings + 1
+
+work$log_mat <- log(plus)
+
+mod4 <- lm(data = work, Age ~ log_mat) 
+summary(mod4)
+```
+
+### c. log-linear regression.
+
+```{r}
+mod5 <- glm(data = work, Age ~ Matings, family = poisson)
+summary(mod5)
+```
+
+Interestingly they all appear to be fine models for looking at the interaction between age and successful mating. Overall, they all show a significant correlation between the age of an elephant and the succuss of mating. I would say that the log linear regression is the best fit but the other models do show similar outcomes. Each model has a small p-value for successful mating in relation to age. 
+
+
+
+# Conceptual Questions:
+## 3.  What is the difference between a log-linear model and a linear model after the log transformation of the response?
+The difference can come down to what is being asked/what is being looked for. We use log-linear models when we want to know the outcome of the overall mean of a variable. We use a linear model after the log transformation to look at the mean outcome of something that has been log transformed. 
+
+
+## 4. his question refers to the elephant mating data from question 2 above.
+
+### a. Both the binomial and the Poisson distributions provide probability models for random counts. Which distribution is more appropriate to model the number of successful matings for male African elephants, and why?
+The Poisson distribution model because we want to know the mean of all males. The poisson distribution model gives the outcome of successfully matings for all males and not just the ones that successfully mated. In addition the response is count data and we want the probability of an eveny which makes it a random event.
+
+### b. In the following plot, we see that the spread of responses is larger for larger values of the mean response. Is this something to be concerned about if we perform a Poisson log-linear regression?
+Yes, becuase to use the Poisson log-linear regression model we assume linearity and from the graph we can see that it is not linear and the variation is not even.
+
+### c. Performing a Poisson log-linear regression results in the following output: What are the mean and variance of the distribution of counts of successful matings (in 8 years) for elephants who are aged 25 years at the beginning of the observation period? What are the mean and variance for elephants who are aged 45 years?
+For 25 year old elephants they have a mean/variance of 1 successful mating. For 45 year old elephants they have a mean/variance of 5 successful matings. 
+
+
+
+
+
+

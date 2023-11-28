@@ -1,0 +1,96 @@
+---
+title: "ST517-HW6"
+author: Nora Quick
+output: pdf_document
+---
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(Amelia)
+library(broom)
+library(ggplot2)
+library(nlme)
+```
+
+1. The ergoStool dataset in the nlme package contains information on an experiment comparing the effort required by each of 9 Subjects to get up from each of 4 Types of stools.
+
+```{r}
+library(nlme)
+?ergoStool
+#ergoStool
+
+effort <- ergoStool$effort
+Type <- ergoStool$Type
+Subject <- ergoStool$Subject
+```
+
+   (a) Create at least one plot to explore the effects of Type and Subject on effort. Does there seem to be evidence of differences between stools? What about differences between subjects?
+   
+```{r}
+qplot(effort, Subject, data = ergoStool, colour = Type, shape = Type)
+qplot(Subject, effort, data = ergoStool, colour = Type, shape = Type)
+```
+
+As we can see from both graphs above, there seems to be a difference between stools. We can see that T2 is always the highest on the effort scale and T1 is almost always the lowest. 
+
+As we can see from both graphs above, there seems to be a difference between subjects as well. 1 and 2 both have overall higher effort than the others while 8, 5, and 4 are on the lower end of the effort scale. 
+
+   (b) Fit a fixed effects model with effects for Type and Subject. Use this model to answer the question: are there any significant differences in effort between stool Type T1 and the other stool types? (Remember to quantify your answer with the relevant confidence intervals).
+
+```{r}
+fix_fit <- lm(effort ~ Type + Subject, data = ergoStool)
+summary(fix_fit)
+```
+
+There is strong evidence that there is a difference between Type 1 and Type 2 as well as Type 1 and Type 3 due to their significant p-values. 
+
+   (c) Why would it be more appropriate to treat Subject as a random effect? How will the inferences about the stool types change if Subject is a random effect?
+   
+If we randomly assign subjects then we would have a better understanding of a population and stool types. If subject is the random effect then we can make inferences about stool types for entire populations. 
+
+   (d) Fit a mixed effects model where Type is a fixed effect, and there are random intercepts for each Subject. Interpret the estimates of the random effect standard deviations in the context of the study.
+   
+```{r}
+rand_fit <- lme(effort ~ Type, data = ergoStool, random = ~ 1 | Subject)
+summary(rand_fit)
+```
+
+The standard deviation of the random effects is estimated to be about 1.33 and the standard deviation of the residuals is estimated to be about 1.10. This shows that the variation can be attributed to the differences in Subject instead of variation in Subject.
+   
+   (e) Fit a mixed effects model with just a single mean, and a random intercept for each subject. Compare this model with the model in part (d) using anova().
+
+      (i) Fit a mixed effects model with just a single mean, and a random intercept for each subject. Compare this model with the model in part (d) using anova().
+
+```{r}
+mixed_fit <- lme(effort ~ 1, random = ~ 1 | Subject, data = ergoStool)
+
+anova(rand_fit, mixed_fit)
+```
+
+      (ii) What hypothesis is being tested? What do you conclude?
+      
+We are checking that the mean type of each subject is the same. In other words, we're testing between the two models is if the stools are different between subjects by checking a null hypothesis that they are the same.  
+
+   (f) Repeat the inferences from part (b) using the mixed model from part (d).
+
+```{r}
+rep_b <- lme(effort ~ Type, data = ergoStool, random = ~ 1 | Subject)
+summary(rep_b)
+intervals(rep_b)
+```
+
+Similar to (b) there is strong evidence that there is a difference between Type 1 and Type 2 as well as Type 1 and Type 3 due to their significant p-values. 
+
+With 95% confidence the mean effort of Type 1 is between 2.82 and 4.96 lower than Type 2.
+With 95% confidence the mean effort of Type 1 is between 1.15 and 3.29 lower than Type 3.
+
+   (g) Imagine you have a 10th subject.
+
+      (i) What would you predict for the mean effort of getting out of stool T1 for this subject? What would be a reasonable interval for this difference? (You don’t actually have to calculate this interval, but discuss the contributors to your uncertainty in the prediction).
+
+Based on the lme() output above the mean effort of getting out of stool T1 for the 10th subject would be 8.56 with an interval between 7.37 and 9.74. This seems like a reasonable interval because it we are treating subjects at random and therefore we are making a conclusion for a whole populatoin above. 
+      
+      (ii) What would you predict for the difference in mean effort between getting out of stool T1 and T2 for this subject? What would be a reasonable interval for this difference? (You don’t actually have to calculate this interval, but discuss the contributors to your uncertainty in the prediction).
+      
+Based on the lme() output above the mean effort of getting out of stool T1 and T2 would be 12.5 with an interval of 10.2 and 14.7. 
+

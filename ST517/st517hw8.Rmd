@@ -1,0 +1,207 @@
+---
+title: "ST517-HW8"
+author: Nora Quick
+output: pdf_document
+---
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(Amelia)
+library(broom)
+library(boot)
+library(ggplot2)
+library(nlme)
+attach(mtcars)
+library(ISLR)
+library(leaps)
+```
+
+1. For each of the following parts, indicate whether we would generally expect the performance of a flexible statistical learning method to be better or worse than an inflexible method. Justify your answers.
+
+   (a) The sample size n is extremely large, and the number of predictors p is small.
+
+For this I believe that a flexible model would perform better here because we are less likely to overfit even with it being flexible based on the large smaple size. 
+
+   (b) The number of predictors p is extremely large, and the number of observations n is small. 
+
+For this I believe that an inflexible model would perform better here because in this situation a flexible model would cause overfitting based on the small sample size. 
+
+   (c) The relationship between the predictors and response is highly non-linear.
+
+For this I believe that I would use a flexible model because it would help find a non-linear effect.
+
+   (d) The variance of the error terms, i.e., $$sigma2$$ = Var(), is extremely high.
+
+For this I believe that I would use an inflexible model because a flexible model would cause too much noise because of the extremely high variance.
+
+
+2. We will now perform cross-validation on a simulated dataset.
+
+   (a) Generate a simulated data set as follows: In this data set, what is n and what is p? Write out the model used to generate the data in equation form.
+   
+```{r}
+set.seed(1)
+x <- rnorm(100)
+y <- x - 2*x^2 + rnorm(100)
+```
+
+Based on the above code I would say that n is 100 ("rnorm(100)") and p is 3 (1 = x, 2 = 2*x^2, and 3 = rnorm(100)).
+
+   (b) Create a scatter plot of X against Y using the data you generated above. Comment on what you see.
+   
+```{r}
+plot(x, y, main="X against Y", xlab="X ", ylab="Y ")
+```
+
+I see an inverse parabolic shape that indicates that when Y reaches closer to 0 so does X.
+   
+   (c) Set a random seed, and then compute the leave-one-out cross-validation (LOOCV) errors that result from fitting the following four models using least squares:
+   
+      (i): Y = $$\beta0$$ + $$\beta1$$X + e
+      
+      (ii): Y = $$\beta0$$ + $$\beta1$$X + $$\beta$$2X2 + e
+      
+      (iii): Y = $$\beta0$$ + $$\beta1$$X + $$\beta$$2X2 + $$\beta$$3X3 + e
+      
+      (iv): Y = $$\beta0$$ + $$\beta1$$X + $$\beta$$2X2 + $$\beta$$3X3 + $$\beta$$4X4 + e
+
+```{r}
+set.seed(5)
+
+# set df for err
+df = data.frame(y,x)
+
+# calculate
+glm.fit1 <- glm(y ~ x)
+cv.err1 <- cv.glm(df, glm.fit1)
+
+glm.fit2 <- glm(y ~ poly(x,2))
+cv.err2 <- cv.glm(df, glm.fit2)
+
+glm.fit3 <- glm(y ~ poly(x,3))
+cv.err3 <- cv.glm(df, glm.fit3)
+
+glm.fit4 <- glm(y ~ poly(x,4))
+cv.err4 <- cv.glm(df, glm.fit4)
+
+# print out
+cv.err1$delta
+cv.err2$delta
+cv.err3$delta
+cv.err4$delta
+```
+      
+   (d) Repeat (c) using another random seed, and report your results. Are your results the same as what you got in (c)? Why or why not?
+   
+```{r}
+set.seed(23)
+
+# set df for err
+df = data.frame(y,x)
+
+# calculate
+glm.fit1 <- glm(y ~ x)
+cv.err1 <- cv.glm(df, glm.fit1)
+
+glm.fit2 <- glm(y ~ poly(x,2))
+cv.err2 <- cv.glm(df, glm.fit2)
+
+glm.fit3 <- glm(y ~ poly(x,3))
+cv.err3 <- cv.glm(df, glm.fit3)
+
+glm.fit4 <- glm(y ~ poly(x,4))
+cv.err4 <- cv.glm(df, glm.fit4)
+
+# print out
+cv.err1$delta
+cv.err2$delta
+cv.err3$delta
+cv.err4$delta
+```
+
+The results of this part (part (d)) were the same as part (c). This is because it's the same data run in the same way so even when the seed is different the same actions are being taken.
+   
+   (e) Which of the models in (c) had the smallest LOOCV error? Is this what you expected? Explain your answer.
+   
+Model 2 has the smallest error. Yes, I expected this because it's not just X but it isn't being help to a large power so it is reasonable that it has the smallest error.
+   
+   (f) Comment on the statistical significance of the coefficient estimates that results from fitting each of the models in (c) using least squares. Do these results agree with the conclusions drawn based on the cross-validation results?
+
+```{r}
+# calculate
+lm1 <- lm(y~x, data=df)
+lm2 <- lm(y~poly(x,2), data=df)
+lm3 <- lm(y~poly(x,3), data=df)
+lm4 <- lm(y~poly(x,4), data=df)
+
+# print
+summary(lm1)
+summary(lm2)
+summary(lm3)
+summary(lm4)
+```
+
+Model 1 having only the intercept be significant, model 2 having everything be significant, model 3 having everything but the last be significant, and model 4 where the first three are significant and the last two aren't.
+
+Yes, this seems to match part (c) and (d) where the second model is the most significant. 
+
+   
+3. The Boston data set is in the MASS package, you’ll need to load that first.
+
+```{r}
+library(MASS)
+?Boston
+head(Boston)
+```
+
+```{r}
+crim <- Boston$crim
+zn <- Boston$zn
+indus <- Boston$indus
+chas <- Boston$chas
+nox <- Boston$nox
+rm <- Boston$rm
+age <- Boston$age
+dis <- Boston$dis
+rad <- Boston$rad
+tax <- Boston$tax
+ptratio <- Boston$ptratio
+black <- Boston$black
+lstat <- Boston$lstat
+medv <- Boston$mdev
+```
+
+   (a) Your job is to build a regression model to predict the crime rate (crim) in Boston suburbs based on the other provided variables.
+   
+      (i) A brief exploratory analysis (some summary statistics, and a few plots of any obvious relationships).
+      
+```{r}
+# calculate
+regfit.best <- regsubsets(crim ~ ., data = Boston)
+
+# summary
+summary(regfit.best)
+
+# best
+r <- lm(crim ~ dis + rad + medv + black, data = Boston)
+
+# print
+r
+
+# plots
+plot(regfit.best, scale="bic")
+```
+      
+      (ii) A description of the set of regression models you considered.
+      
+I chose those regression models (dis, rad, medv, black) because of their shown significance to crime. 
+      
+      (iii) A description of how the models were evaluated.
+      
+They were evaluated by fitting all the variables with resubsets to see which variables were significant. Once I saw which best predicted I fit the best ones with a regression model. 
+      
+      (iv) A summary of one (or a few) models that based on your analysis are the best among those you considered.
+      
+I determined that dis, rad, medv, and black are the four best models to base the analysis on. 
+
+In summary there is a large significance for dis because it determines the distances between five Bostom employment centers from the population. This means how far away are citicens from a place where they can get help getting a job. The further the way they are the less easy it is for them to get help and, therefore, without a job and no help getting one crime is higher.

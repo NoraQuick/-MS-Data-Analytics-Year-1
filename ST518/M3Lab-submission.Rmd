@@ -1,0 +1,65 @@
+---
+title: "Module 3 Lab Submission"
+author: "Nora Quick"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(broom)
+```
+
+Consider the `cars` data, which contains cars speed in MPH and stopping distance in feet. Load the data with `data("cars")`.
+
+```{r, echo = TRUE}
+data("cars")
+qplot(speed, dist, data = cars)
+```
+
+* Fit a simple linear model with `dist` as the response and `speed` as the explanatory variable.
+
+```{r}
+fit <- lm(dist ~ speed, data = cars)
+summary(fit)
+```
+
+
+* Create two diagnostic plots using the residuals, one with `speed` on the x-axis, and the other with the fitted values from the model. Do the plots look good: do these data seem to satisfy the assumptions for a linear regression model?
+
+```{r}
+f <- augment(fit)
+
+qplot(speed, .resid, data = f)
+qplot(.fitted, .resid, data = f)
+```
+
+
+* Use `predict()` to get the confidence and prediction intervals using the following new data.
+
+```{r}
+new <- data.frame(speed = c(6, 10.5, 14.7, 18.3, 21))
+
+predict(fit, newdata = new, interval = "confidence")
+```
+
+Now note that there are many speeds for which there were multiple observations at that speed.  This means we can perform a lack-of-fit test on this data.  
+
+* Fit a separate means model using `lm()` and `factor()` to treat `speed` as a categorical variable.
+
+```{r}
+lm_speed <- lm(dist ~ speed, data = cars)
+lm_speed
+
+fac_speed <- lm(dist ~ factor(speed), data = cars)
+fac_speed
+```
+
+* Compare the separate means model to the simple linear regression model using the `anova()` function. 
+
+```{r}
+anova(lm_speed, fac_speed)
+```
+
+
+

@@ -1,0 +1,124 @@
+---
+title: "ST517-HW6"
+author: Nora Quick
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(Amelia)
+library(broom)
+library(faraway)
+library(ggplot2)
+library(tidyverse)
+library(MASS)
+library(Sleuth3)
+```
+
+1. The **pima** dataset contains information on 768 adult female Pima Indians living near Phoenix.
+
+```{r}
+#library(faraway)
+#?pima
+#pima
+
+pregnant <- pima$pregnant
+glucose <- pima$glucose
+diastolic <- pima$diastolic
+triceps <- pima$triceps
+insulin <- pima$insulin
+bmi <- pima$bmi
+diabetes <- pima$diabetes
+age <- pima$age
+test <- pima$test
+```
+
+   (a) It has been suggested that the zeros in diastolic, glucose, triceps, insulin and bmi are actually missing values. Replace these zeros with NAs and describe (quantitatively, visually, and in words) the distribution of missing values in the data.
+   
+```{r}
+diastolic[diastolic == 0] <- NA
+glucose[glucose == 0] <- NA
+triceps[triceps == 0] <- NA
+insulin[insulin == 0] <- NA
+bmi[bmi == 0] <- NA
+
+summary(diastolic)
+summary(glucose)
+summary(triceps)
+summary(insulin)
+summary(bmi)
+
+boxplot(diastolic, glucose, triceps, insulin, bmi, names = c("diastolic", "glucose", "triceps", "insuline", "bmi"))
+```
+
+As we can see from the summaries and boxplot most of the variables are normally distributed (diastolic, glucose, triceps, bmi). The only variable that is skewed is insuline which is right skewed. 
+
+   (b) Suggest, in the context of the study, a mechanism such that the missing values in
+diastolic might be considered missing completely at random.
+
+While it is required for all medical visits to get blood pressure checked there could be missing values because a nurse or doctor forgot to check the woman's blood pressure. In other words, human error.
+
+   (c) Suggest, in the context of the study, another mechanism such that the missing values in diastolic might be considered missing not at random.
+   
+Age (or any of the other factors) could cause a woman to not want her blood pressure checked. For example, if the woman is much older and doesn't have the best health then they ask that blood pressure isn't checked at that time. 
+
+   (d) Fit a linear model with diastolic as the response and the other variables as predictors. Summarize the fit.
+   
+```{r}
+pima$test <- as.factor(ifelse(pima$test == 1, "positive", "negative"))
+fit <- lm(diastolic ~ pregnant + glucose + insulin + bmi + diabetes + age + test, data = pima)
+
+summary(fit)
+```
+
+With a null hypothesis of everything having the same (no) effect on a womans blood pressure we can reject the mull hypothesis.
+
+The overall p-value is quite small (2.2e-16) so we will conclude that the different effects on the body all effect blood pressure in different ways. Specifically, bmi, age, and testing positive for signs of diabetes can all effect the blood pressure of a woman. 
+   
+   (e) Use mean value imputation for the missing values, and refit the model. Compare the resulting estimates to the estimates from the previous fit: are the coefficient estimates similar, or do they differ substantially?
+
+```{r}
+pima_Mean <- pima
+
+pima_Mean$insulin[is.na(pima$insulin)] <- mean(pima$insulin, na.rm=TRUE)
+pima_Mean$glucose[is.na(pima$glucose)] <- mean(pima$glucose, na.rm=TRUE)
+pima_Mean$triceps[is.na(pima$triceps)] <- mean(pima$triceps, na.rm=TRUE)
+pima_Mean$bmi[is.na(pima$bmi)] <- mean(pima$bmi, na.rm=TRUE)
+
+fit <- lm(diastolic ~ pregnant + glucose + insulin + bmi + diabetes + age + test, data = pima_Mean)
+
+summary(fit)
+```
+
+With a null hypothesis of everything having the same (no) effect on a womans blood pressure we can reject the mull hypothesis.
+
+In part (d) we have three different factors that effect blood pressure (bmi, age, and testing positive for signs of diabetes). Here we can see that those three are still the significant. In fact, they are all the same outcome in both part (d) and (e).
+
+   (f) Use multiple imputation to handle missing values and fit the same model again. Compare the resulting estimates to the estimates from the previous two models (with no imputation, and with mean imputation): are the coefficient estimates similar, or do they differ substantially?
+
+```{r}
+set.seed(1234)
+n.imp <- 50
+
+pima$diastolic[pima$diastolic == 0] <- NA
+pima$glucose[pima$glucose == 0] <- NA
+pima$triceps[pima$triceps == 0] <- NA
+pima$insulin[pima$insulin == 0] <- NA
+pima$bmi[pima$bmi == 0] <- NA
+
+new_pima <- amelia(pima, m = n.imp, p2s = 0, idvars = "test")
+
+betas <- matrix(0, nrow = n.imp, ncol = 9)
+ses <- matrix (0, nrow = n.imp, ncol = 9)
+
+for(i in 1:n.imp){
+   new_mod <- lm(diastolic ~ pregnant + glucose + triceps + insulin + bmi + diabetes + age + test, data = new_pima$imputations[[i]])
+   betas[i,] <- coef(new_mod)
+   ses[i,] <- coef(summary(new_mod))[,2]
+}
+
+mi.meld(q=betas, se=ses)
+```
+
+Comparing this model to the models above with this one I would conclude that the variables are similar. Going through each of the betas and standard errors the new model varies up and down from the old models a bit, however, they are not what I would classify as substantial. 
+

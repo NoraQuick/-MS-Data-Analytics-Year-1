@@ -1,0 +1,286 @@
+---
+title: "ST 518 Module 6 Lab"
+subtitle: Zero-Inflated Models
+output:
+  html_notebook: default
+  html_document: default
+  pdf_document: default
+---
+
+# Zero-Inflation
+
+Please load these libraries that you'll need for this lab:
+
+```{r, message = FALSE, warning = FALSE}
+library(arm)
+library(Sleuth3)
+library(tidyverse)
+library(vcdExtra)
+library(magrittr)
+library(MASS)
+library(pscl)
+```
+
+In this lab, we'll cover some more details about zero-inflated and hurdle models. We will discuss why zero-inflated models are sometimes needed, the difference between zero-inflated models and hurdle models, how to compare various types of fitted models, and how to check residuals to assess model assumptions.
+
+# Quine Data
+
+We will use data from schools in Australia about the number of days that children are absent from a particular school in the `MASS` library.
+
+## Some data exploration
+
+```{r}
+?quine
+schools <- quine
+head(schools)
+```
+
+For each child in the data set, we have information on the child's Ethnicity, Sex, Age, Learning Disability Status, and Days absent from school (which we will treat as the response variable). All of the explanatory variables are categorical with two categories each, except for Age which has four categories.
+
+We'll start with some exploration of the data.
+
+```{r, fig.height = 4, fig.width = 6}
+ggplot(data = schools, aes(x = Days, y = ..density..)) +
+	geom_histogram(bins = 12, colour = "black", fill = "white") +
+	ggtitle("Days Absent from School")
+```
+
+You can see from the histogram above that most of the children only missed between 5 and 10 days of school. However, there are perhaps more 0's than we would expect from a standard Poisson or Negative Binomial Model. It's rather difficult to tell what will be the best model for these data just based on this simple histogram, but we will investigate the various models proposed in lecture throughout the rest of the lab.
+
+Next, let's next create some side-by-side boxplots to explore how each of the categorical explanatory variables is associated with the response.
+
+```{r, fig.height = 4, fig.width = 6}
+ggplot(data = schools, aes(x = Eth, y = Days)) +
+	geom_boxplot() +
+	ggtitle("Days Absent vs. Ethnicity") +
+	scale_x_discrete(labels = c("Aboriginal", "Not Aboriginal"))
+```
+
+Here is looks like there are generally higher numbers of days absent among the Aboriginal students, and there's also more variability in that group.
+
+```{r, fig.height = 4, fig.width = 6}
+ggplot(data = schools, aes(x = Sex, y = Days)) +
+	geom_boxplot() +
+	ggtitle("Days Absent vs. Gender") +
+	scale_x_discrete(labels = c("Female", "Male"))
+```
+
+It's difficult to detect large differences here, though there is some indication of more variation in the distribution of male students. 
+
+```{r, fig.height = 4, fig.width = 6}
+ggplot(data = schools, aes(x = Age, y = Days)) +
+	geom_boxplot() +
+	ggtitle("Days Absent vs. Age") +
+	scale_x_discrete(labels = c("Primary", "F1", "F2", "F3"))
+```
+
+There seems to be some skewness in the F1 distribution, and you could investigate that further by cross-tabulating `Age` with some of the other explanatory variables.
+
+```{r, fig.height = 4, fig.width = 6}
+ggplot(data = schools, aes(x = Lrn, y = Days)) +
+	geom_boxplot() +
+	ggtitle("Days Absent vs. Learning") +
+	scale_x_discrete(labels = c("Average Learner", "Slow Learner"))
+```
+
+Finally, there are not clear differences in these two distributions, but we should investigate some more by fitting some models.
+
+One thing to notice about many of the boxplots is that there are (at least what R is declaring to be) outliers on the upper end of all of the boxplots.  But remember that count distributions tend to be right skewed (just revisit the histogram above!), and so these may not really be outliers, but rather just large counts that we can expect from some count distributions.
+
+An as aside, take a look at the help file for the `geom_boxplot()` function.
+
+```{r}
+?geom_boxplot
+```
+
+If you scroll down in the help file to where it describes the "Computed Variables," you'll see that `ymax` is defined as "upper whisker = largest observation less than or equal to upper hinge + 1.5 * IQR" ("upper hinge" is the 75th percentile). This is a rather standard, though arbitrary rule for declaring something an outlier. Also remember that with Poisson count data, as the counts increase, so does the variance. Therefore, when looking at boxplots of count data, an "outlier" may simply be an indication of large variance, or it may be an indication of over dispersion. 
+
+# Zero Inflation
+
+As discussed in the narrated lectures this week, the 0's in the `quine` dataset might be divided into two categories: true 0's and excess 0's (though we will never be able to tell definitively which are true and which are excess based on the data alone). In this particular example, some of the excess 0's might be present if parents of the children force them to go to school every day while the true 0's might be present for those children that truly never got sick or had to miss  school for another reason. This is purely speculative, but, for count data, it can be helpful to think about *why* there might be zero-inflated data.
+
+## Zero-Inflated Models
+
+Recall that the zero-inflated Poisson regression model is a two part model with:
+
+$logit(\pi_i) = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} + \beta_4 X_{4i} + \beta_5 X_{5i} + \beta_6 X_{6i}$
+
+and 
+
+$log(\lambda_i) = \gamma_0 + \gamma_1 X_{1i} + \gamma_2 X_{2i} + \gamma_3 X_{3i} + \gamma_4 X_{4i} + \gamma_5 X_{5i} + \gamma_6 X_{6i}$
+
+with $X_1$ as the indicator for Ethnicity, $X_2$ as the indicator for Sex, $X_3$, $X_4$, $X_5$ as the three indicator variables for Age, and $X_6$ as the indicator variable for Learning Status.
+
+*Note 1*: Recall that, for categorical variables, we need $k - 1$ indicator variables in the model for each explanatory variable, where $k$ is the number of categories for a particular explanatory variable.
+
+If we expect there to be over dispersion in the counts, we might also consider fitting a zero-inflated negative binomial model. This is really quite similar to the idea of the zero-inflated Poisson model (we even have the same link function, the log-link). The only difference is that the negative binomial model has an extra parameter to estimate and allows for the possibility of over dispersion in the counts.
+
+## Hurdle Models
+
+The purpose of hurdle models is the same as the purpose of zero-inflated models: to account for excess 0's. As discussed in the Sarul and Sahin reading, the results of the models can actually give quite different results sometimes. 
+
+*Note 2*: As with the previous lab, fitting all of the different models we are about to fit does actually qualify as data snooping. In reality, we would want to think about whether a hurdle model or a zero-inflated Poisson model or a zero-inflated negative binomial model, etc., is most reasonable for the particular data we have **before** doing any model fitting.
+
+## Model Evaluation, Comparison, and Information Criteria
+
+Let's first fit a zero-inflated Poisson model using all four covariates, and compare it to the usual poisson regression model.
+
+```{r}
+mod.pois0 <- zeroinfl(Days ~ Eth + Sex + Age + Lrn,
+  dist = "poisson", data = schools)
+summary(mod.pois0)
+```
+
+Recall that when we run the zero-inflated model, we get estimated  regression coefficients for the zero-inflated part of the model and separate estimated regression coefficients for the Poisson part of the model.
+
+```{r}
+mod.pois <- glm(Days ~ Eth + Sex + Age + Lrn,
+  family = "poisson", data = schools)
+summary(mod.pois)
+
+```
+
+We see that the zero-inflated model has a much lower AIC than the usual Poisson model; also, as expected, the zero-inflated model uses twice as many degrees of freedom as the usual Poisson model since we have twice as many parameters to estimate in the zero-inflated model.
+
+We can also repeat what we did above using a negative binomial model to account for the (possible) overdispersion.
+
+```{r}
+mod.nb0 <- zeroinfl(Days ~ Eth + Sex + Age + Lrn,
+  dist = "negbin", data = schools)
+summary(mod.nb0)
+
+# compare to the negative binomial model without zero-inflation
+
+mod.nb <- glm.nb(Days ~ Eth + Sex + Age + Lrn, data = schools)
+summary(mod.nb)
+```
+
+The structure of the output for these two models looks very similar to the structure of output for the Poisson regression models, except one additional parameter is estimate in each model (as compared to the analogous Poisson model): $\theta$, the dispersion parameter. In both models, $\hat\theta$ is larger than 1, indicating that there is some over dispersion of the counts. We will test this more formally using a drop-in-deviance test in a moment, but for completeness, let's also fit the Poisson hurdle model and the negative binomial hurdle model.
+
+```{r}
+mod.pois.hurdle <- hurdle(Days ~ Eth + Sex + Age + Lrn,
+  dist = "poisson", data = schools)
+summary(mod.pois.hurdle)
+
+mod.nb.hurdle <- hurdle(Days ~ Eth + Sex + Age + Lrn,
+  dist = "negbin", data = schools)
+summary(mod.nb.hurdle)
+```
+
+We can now compare all six of these models using AIC or BIC to see if any of the models are preferable. Based on intuition, we would expect the negative binomial models to be better than the Poisson models since, from the exploratory analysis, we expected there to be over dispersion in the counts of days missed from school.
+
+```{r}
+AIC(mod.pois0, mod.pois, mod.pois.hurdle, mod.nb0, mod.nb, mod.nb.hurdle)
+```
+
+
+As expected, the negative binomial models all have much lower AIC than the Poisson models. However, after we account for this over dispersion, the three negative binomial models are relatively similar  in terms of AIC. Therefore, we would probably prefer the simplest model (the model that does not incorporate zero-inflation) here. 
+
+We mentioned above that, sometimes the hurdle model gives very similar estimates and results as the zero-inflated model, but sometimes the results are quite different. We can compare the zero-inflated negative binomial model to the negative binomial hurdle model here to see if there are any major differences in the coefficient estimates and/or their standard errors. Again, this is just an academic exercise, because based on the AIC analysis above, we'd recommend using the model without zero-inflation.
+
+```{r}
+tab1 <- cbind(round(summary(mod.nb0)$coefficients[[1]][, 1], 3),
+	round(summary(mod.nb.hurdle)$coefficients[[1]][, 1], 3))
+colnames(tab1) <- c("Zero-Inf Coefs", "Hurdle Coefs")
+tab1
+tab2 <- cbind(round(summary(mod.nb0)$coefficients[[1]][, 2], 3),
+	round(summary(mod.nb.hurdle)$coefficients[[1]][, 2], 3))
+colnames(tab2) <- c("Zero-Inf SEs", "Hurdle SEs")
+tab2
+```
+
+In this particular instance, the coefficients for the negative binomial part of the model and their standard errors are quite similar. You are asked to compare the coefficients and their standard errors for the "extra zero" part of these two models at the end of the lab.
+
+Let's next carry out a more formal Vuong test to compare the zero-inflated negative binomial model to the usual negative binomial model.
+
+### Vuong test
+
+Because the zero-inflated poisson model and the usual poisson model do not nest, we can't use a drop in deviance test to compare the models (and same goes for the negative binomial model vs. the zero-inflated negative binomial model).
+
+The Vuong test has a null hypothesis that the models are indistinguishable with a large positive test statistic indicating that the first model that is input into the function is better (below, we put the zero-inflated model first) and a large negative test statistic indicating that the second model is better. 
+
+```{r}
+vuong(mod.nb0, mod.nb)
+```
+
+*Note 1*: The Vuong test is asymptotic so, if the sample size of the data set is not very large, then the test is unreliable and should not be used.
+
+*Note 2*: We can also use the test to compare the Poisson models just for fun.
+
+```{r}
+vuong(mod.pois0, mod.pois)
+```
+
+Here, there is fairly strong evidence that the zero-inflated Poisson model is better than the non-zero inflated Poisson model. However, as discussed above, neither seem appropriate since there is over dispersion in the counts of days absent from school.
+
+To conclude, it seems evident that there is over dispersion in the days absent variable, but that these counts are *not* zero-inflated. In this instance the appropriate model to use for interpretation and inference is the negative binomial regression model.
+
+### Coefficient Interpretation
+
+Even though zero-inflation is not apparent in the days absent counts, we're going to proceed with interpreting the estimated regression coefficients for the zero-inflated negative binomial model just so you can see one approach. Recall that the coefficient estimates for this model are:
+
+```{r}
+summary(mod.nb0)$coefficients[[1]][, 1]
+summary(mod.nb0)$coefficients[[2]][, 1]
+```
+
+The first set of coefficients is from the negative binomial part of the model and the second set of coefficients is from the zero-inflation part of the model. If we think in the framework of some of the zeros as true zeros and some of the zeros as excess zeros, then we might interpret the `Ethnicity` coefficient estimate in the negative binomial model, -0.5096, in the following way:
+
+"A person of non-Aboriginal descent is predicted to be absent from school $1 - exp(-0.5096) = 39.93%$ less than a person of Aboriginal descent at this particular school *among all of those with a risk of being absent (i.e., among all of those that are not the excess zeroes), provided these two people are of the same gender, age and learner status*. 
+
+That's rather a mouthful of an interpretation, but we have to be careful when interpreting regression coefficient estimates from a model with multiple explanatory variables -- the interpretation of a single coefficient estimate has to be made while holding the values of the other explanatory variables fixed. 
+
+Notice that this interpretation is exactly the same as the interpretation in the usual negative binomial model except for the extra parenthetical we added about the excess zeroes.
+
+Similarly, we interpret regression coefficient estimates from the zero-inflated part of the model in the same way that we would interpret estimates from a logistic regression model. 
+
+### Looking at Residuals
+
+Let's new consider a few residual plots from the zero-inflated negative binomial model.
+
+```{r, fig.height = 4, fig.width = 6}
+schools$residuals.pearson <- residuals(mod.nb0, type = "pearson")
+schools$fitted.vals <- mod.nb0$fitted.values
+ggplot(data = schools, aes(x = Eth, y = residuals.pearson)) +
+	geom_point()
+ggplot(data = schools, aes(x = Sex, y = residuals.pearson)) +
+	geom_point()
+ggplot(data = schools, aes(x = Age, y = residuals.pearson)) +
+	geom_point()
+ggplot(data = schools, aes(x = Lrn, y = residuals.pearson)) +
+  geom_point()
+ggplot(data = schools, aes(x = fitted.vals, y = residuals.pearson)) +
+	geom_point()
+```
+
+We see from these residual plots that there are a few residuals that are larger than 3. However, given such a large sample, it is not too surprising that a few points have large residuals. We also see in the residuals vs. fitted values plot, that the spread of the residuals is relatively constant across all fitted values. Overall, there is no cause for concern in using the zero-inflated negative binomial model for this data. As discussed above, however, since the zero-inflated model has a similar AIC (actually a slightly larger AIC) than the non-zero-inflated model, we would probably prefer the simpler non-zero-inflated model.
+
+# Lab Questions
+
+0. Compare the coefficients and their standard errors for the "extra zero" parts of the `mod.nb0` and `mod.nb.hurdle` models. Are the coefficients and standard errors similar or different? Explain.
+
+We saw above that, after accounting for over dispersion, there wasn't really any evidence of zero-inflation in the `quine` data set. From looking at exploratory plots of the data, however, it can be somewhat difficult to tell whether there is over dispersion, zero-inflation or both. Let's run the following code to simulate what counts would look like under a Poisson model (no zero-inflation, no over dispersion), a zero-inflated Poisson model (zero-inflation, no over dispersion), and a negative binomial model (over dispersion, no zero-inflation). We will need to install and load the `VGAM` package to easily simulate from a zero-inflated Poisson model.
+
+```{r, message = FALSE, warning = FALSE}
+library(VGAM)
+n <- 150 ## set the sample size
+pois <- rpois(n, lambda = 5)
+negbin <- rnbinom(n, mu = 5, size = 1.4)
+pois0 <- rzipois(n, lambda = 6.25, pstr0 = 0.2)
+sim.df <- as.data.frame(cbind(pois, negbin, pois0))
+```
+
+1. Run the above code and then make three histograms of the three sets of simulated data. Also, get summary statistics for each of the three sets of simulations. 
+
+2. What are some of the differences between the three histograms? Also, what do you notice about the negative binomial simulated data? (which applies to our data analysis above)
+
+3. Repeat the simulation of the negative binomial data, but try changing the `size` parameter to a few different values. What does the size parameter seem to control?
+
+4. Finally, simulate some data from a zero-inflated negative binomial distribution using the `rzinegbin` function in the `VGAM` package.
+
+```{r}
+?rzinegbin
+sim.df$negbin0 <- rzinegbin(n = n, size = 1.4, munb = 5, pstr0 = 0.2)
+```
+
+Try plotting a histogram of the zero-inflated negative binomial data. Is it easy or difficult to tell based on these histograms whether data come from the poisson, negative binomial, zero-inflated poisson, or zero-inflated negative binomial models?

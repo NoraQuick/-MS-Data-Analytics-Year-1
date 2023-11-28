@@ -1,0 +1,56 @@
+---
+title: "Module 7 Lab Submission"
+author: "Nora Quick"
+output: pdf_document
+---
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(broom)
+library(ggplot2)
+library(nlme)
+```
+
+The `Resin` data set and the following data description come from Gary Oehlert's book *A First Course in Design and Analysis of Experiments*:
+
+"The oleoresin of trees is obtained by cutting a tapping gash in the bark and removing the resin that collects there. Acid treatments can also improve collection. In this experiment, four trees (dipterocarpus kerrii) will be tapped seven times each. Each of the tappings will be treated with a difference strength of sulfuric acid (0, 2.5, 5, 10, 15, 25, and 50% strength), and the resin collected from each tapping is the response (in grams, data from Bin Jantan, Bin Ahmad, and Bin Admad 1987)."
+
+First we read in the data, and then convert it to a `groupedData` object using the function `groupedData()`, which is part of the `nlme` package.  Note that we will be treating the acid strength as a categorical (factor) variable rather than as a quantitative variable.  We indicate this with the `as.factor()` function applied to the `strength` variable.
+
+```{r}
+Resin <- read.csv("Resin.csv")
+Resin_group <- groupedData(yield ~ as.factor(strength) | tree, data=Resin, 
+                           order.groups=FALSE)
+```
+
+
+1. **Plot the grouped data object `Resin_group`.**
+
+```{r echo=TRUE}
+strength <- Resin_group$strength
+tree <- Resin_group$tree
+yeild <- Resin_group$yield
+
+qplot(strength, yeild, data = Resin_group, colour = tree, shape = tree)
+```
+
+
+2. **Use the `lme()` function to fit a mixed effects model with `strength` as a fixed effect and `tree` as a random effect.  Be sure to treat `strength` as a categorical variable by using the `factor()` function around the `strength` variable in your formula.**
+
+```{r echo=TRUE}
+fit <- lme(yeild ~ factor(strength), data = Resin_group, random = ~ 1 | tree)
+```
+
+3. **Use the `summary()` function to summarize the mixed effects model you fit above.**
+
+```{r echo=TRUE}
+summary(fit)
+```
+
+The sd of the random effects is estimated to be about 61.5 and the standard deviation of the residuals is estimated to be about 44.4. This shows that the variation can be attributed to the differences in trees instead of the tree variation. 
+
+4. **Use the `intervals()` function to construct confidence intervals for the fixed effect coefficient parameters and the random effect standard deviation parameter.**
+
+```{r echo=TRUE}
+intervals(fit)
+```

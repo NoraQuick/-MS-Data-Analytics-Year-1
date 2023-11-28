@@ -1,0 +1,409 @@
+---
+title: "ST 518 Module 4 Lab"
+subtitle: "Count Responses & Over Dispersion"
+output: html_notebook
+---
+
+
+# Count responses
+
+Please load these libraries that you'll need for this lab:
+
+```{r}
+library(arm)
+library(Sleuth3)
+library(tidyverse)
+library(vcdExtra)
+library(magrittr)
+```
+
+In this lab, we'll go over some of the finer details of binomial logistic regression that you only saw briefly in the narrated lectures. We'll cover the drop in deviance and deviance goodness of fit tests, and show how to perform them using R. We'll also talk more about residuals from binomial logistic regression and about the dispersion parameter and over dispersion. Two additional topics are (1) a pathological (but not altogether rare) situation that can arise in logistic regression and (2) using logistic regression to perform a test of the difference in two proportions.
+
+# Binomial logistic regression
+
+In the previous lab, we introduced binary logistic regression in the context of a continuous explanatory variable (age).  In this situation, each individual could, in principle, have had a unique combination of values of the explanatory variables.  In practice, due to rounding of ages to whole years, there were several explanatory variable combinations that occurred multiple times (this was why we had to jitter the plot of survival vs age). For those particular combinations of the explanatory variables, we could count up the number of Donner party survivors and non-survivors -- so we'd have a count as the response, rather than a binary observations.
+
+We are typically still inclined to think of the survival of *individual* Donner Party members, however; rather than in terms of the *count* of survivors out of the total number of members at each age-sex combination.
+
+In this lab, we take a different perspective on logistic regression.  We consider binary observations that are clustered into groups, where the *counts* of outcomes in each group are the natural measurements of interest.  We consider each count to have a *binomial* distribution with some probability $p$, and derive the log-odds from these binomial probabilities.  Since a binomial $p$ comes from an underlying Bernoulli $p$ (or since a Bernoulli is a special case of a binomial), however, logistic regressions for binary outcomes and binomial counts are not fundamentally different beasts -- they use the same model equations, they are fit with the same R function, they estimate the same parameters, and they rely on the same assumptions.  Using binomial logistic regression when applicable, though, makes *checking* some of those assumptions more direct.  
+
+## Aflatoxin data
+
+In this lab we will continue with the `ex2116` data from *Sleuth3*, introduced in lecture.  Each of 20 tanks was stocked with fishes that had been exposed as embryos to one of 4 doses of a carcinogen.  When the fishes were dissected a year later, the number of fishes that had developed liver tumors was recorded.  
+
+```{r}
+data(ex2116)
+tumors <- ex2116
+head(tumors)
+```
+
+Here we'll add a column that records the number of fish in each tank which did not develop liver tumors, and a column that assigns a unique label to each of the 20 tanks. We'll also add a column for log(Dose) and log(Dose)^2 since we used those as explanatory variables in the model you saw in the narrated lectures.
+
+```{r}
+tumors %<>% mutate(Dose = Dose, Tumor = Tumor, NoTumor = Total - Tumor, TankID = factor(1:nrow(tumors)),logDose = log(Dose), logDose2 = log(Dose)^2)
+head(tumors)
+```
+
+We'll also create a case-format version that records the binary status (tumor or not) for each of the 1739 individual fishes.  
+# check code tumors_case$Outcome should be a factor
+
+```{r}
+tumors_freq <- tumors %>% select(-Total) %>% gather(key = Outcome, value = Freq, Tumor:NoTumor, factor_key = TRUE)
+tumors_case <- expand.dft(tumors_freq)
+head(tumors_case)
+```
+
+(With most of the lab examples so far oriented around examples of death, discrimination, and disease, you might accuse us statisticians of attempting to usurp from economics the title of "dismal science"! (Economists think *they're* pessimists -- what they call "maximizing utility", statisticians call "minimizing loss"). We promise nobody dies in the next lab. Probably.
+
+## Binary vs binomial 
+
+There are several equivalent ways of fitting a logistic regression model with `glm()` to data such as the `ex2116` data.  We will see why the fitting methods that preserve information about the counts within each tank are preferable for our purposes.
+
+### Modeling a binomial count for each tank
+
+First, the response can be specified as a 2-column matrix containing counts of successes in the first column and counts of failures in the second.
+
+```{r}
+mod1 <- glm(data = tumors, cbind(Tumor, NoTumor) ~ logDose + logDose2, family = "binomial")
+summary(mod1)
+```
+
+The response can also be specified as a vector of *proportions* of successes in each group, with the total in each group given through the `weights` argument:
+
+```{r}
+mod2 <- glm(data = tumors, Tumor/Total ~ logDose + logDose2, weights = Total, family = "binomial")
+summary(mod2)
+```
+
+Be sure to verify that `mod1` and `mod2` are equivalent.
+
+### Modeling a binary outcome for each fish
+
+We have converted the data to case format, where each row contains an individual binary outcome corresponding to an individual fish. These outcomes can be modeled directly, just as we saw with the (ungrouped) Donner data in Lab 3.
+
+```{r}
+mod3 <- glm(data = tumors_case, Outcome ~ logDose + logDose2, family = "binomial")
+summary(mod3)
+```
+
+Make a quick comparison of the coefficient estimates from `mod2` and `mod3`:
+
+```{r}
+cbind(coefficients(mod2),coefficients(mod3))
+```
+
+The two models give the same coefficient estimates, and you can also verify that the corresponding standard errors are the same. Therefore, in terms of inferences about the regression coefficients, treating the data as binary (one 0/1 outcome for each fish) or binomial (one count outcome for each tank) doesn't *seem* to matter. 
+
+But, let's remember that when we looked at the binomial logistic regression model in class, we noticed some over dispersion in the counts. We'll first examine one more approach to modeling the binomial counts, and then turn to talking about the over dispersion.
+
+### Modeling as binomial counts within each Dose
+
+Note that "TankID" is not a term in any of the models we fit above.  The binomial logistic models treat the 5 tanks in each of the 4 dose groups as independent binomial observations -- within each `Dose` level, the 5 tanks are supposed to be draws from 5 independent binomial random variables, with potentially different $n$ (different number of fish in each tank) but all with the same $p$.  In the binary logistic model, the tanks are ignored and the fish-level outcomes are treated as independent Bernoulli random variables, with a common $p$ at each `Dose`. In either form, a single $p$ applies to every fish in the `Dose` level, regardless of tank.  Indeed, we can explicitly collapse across the tanks before fitting the model, without affecting any of the inferences:
+
+```{r}
+(summed_tumor <- summarize(group_by(tumors, Dose, logDose, logDose2), sum(Tumor), sum(NoTumor)))
+```
+
+Notice that we've now reduced the dataset down to five observations! And now we'll fit the model to these summed responses:
+
+```{r}
+mod4 <- glm(data = summed_tumor, cbind(`sum(Tumor)`, `sum(NoTumor)`) ~ logDose + logDose2, family = "binomial")
+summary(mod4)
+```
+
+And compare coefficient estimates:
+
+```{r} 
+cbind(coefficients(mod2),coefficients(mod3),coefficients(mod4))
+```
+
+And once again you can verify that all of the corresponding standard errors are also the same. So what's going on here, and which of these models is "the best one" to use?
+
+### Ok, so now what?!
+
+The parameter estimates and standard errors are all identical -- we reach the same conclusions from each model.  But let's look at the residual deviances for each of the models:
+ 
+```{r}
+cbind(deviance(mod2),deviance(mod3),deviance(mod4))
+```
+
+It's also important to recognize that in `mod2`, `mod3` and `mod4`, the sample sizes are n = 20, n = 1739 and n = 5, respectively.  And, the null deviances for each model are also substantially different; again in order of `mod2`, `mod3` and `mod4` these are 667.20, 2395.84 and 641.23. The *difference* in deviance (the deviance accounted for by a model), however, is the same for every form of the model.
+
+To see more plainly that the methods above are equivalent, we can view minimal summaries from each using the `display()` function from *arm*.  The abbreviated output (compared to `summary`) facilitates comparison between several models on the same page.
+
+```{r}
+# counts in tanks
+display(mod2)
+# binary outcomes per fish
+display(mod3)
+# counts in dose level ignoring tanks
+display(mod4)
+```
+
+All the same assumptions go into each of these ways of fitting the models, and all the same inferences come out.  In particular, we are always assuming that once we know the `Dose` a fish received, knowing the particular *tank* in which that fish was housed cannot give us any more information about that fish's chance of having a tumor -- not even if we know that the fish came from a tank in which an especially large (or small) number of *other* fish got tumors, compared to other tanks within the same dose level.  In the binomial-tank-counts model, this assumption reads like "every binomial within a dose level has the same $p$."  In the binary-fish model, it reads "every Bernoulli within a dose level has the same $p$."  In the binomial-dose-count model, it reads "the Bernoulli's across all tanks within a dose must be independent."  We could call this the assumption of "irrelevant groups (tanks)."  
+
+If we have some grouping at all, however, we often suspect that this last assumption about independence is not sound.  Fish in the same tank are expected to be more similar to one another than fish in different tanks. That is, we should *not* expect same binomial $p$ in every tank, nor should we suppose that all the Bernoulli responses in a dose level are independent, regardless of tank.  
+
+In what follows, we will see that fitting the model in the "tank-count" binomial form, as opposed to per-fish binary form or the dose-count binomial form, is the way that will allow us to *check* whether the group-irrelevance of assumption is reasonable. We'll see that *not* making this assumption comes with a steep price, and preview another technique that will sometimes allow us to avoid paying it.
+
+# Model fit and model comparison
+
+In the binary logistic case, there was little we could do to directly assess model fit.  You could try squinting at some residual plots, but that's about it.  The single binary outcomes just bounce around too much to say of anything about what the fitted line "should have done" at any given predictor value -- it certainly should not chase every individual 1 or 0.  To get some stability, you need to be able to put multiple observations within the same "bin", so that you can say whether the proportion (or log-odds) in that bin is close to what the model predicts.  
+
+## Empirical logits
+
+The empirical logit is just the logit transformation applied to the proportion within a bin (this isn't the log-odds of the *probability* within the bin, it's just an estimate based on the observed proportion -- hence "empirical").  
+
+Remember the logit transformation of a proportion/probability is given by `qlogis()`:
+
+```{r}
+empirical_logits <- with(tumors, qlogis(Tumor/Total))
+```
+
+We plot the empirical logits against `Dose` to see the shape of the relationship we're trying to capture on the log-odds scale, along with a loess smooth.
+
+```{r}
+ggplot(data = tumors, aes(x = Dose, y = empirical_logits))+ 
+  geom_jitter(width = 0.005, height = 0.01) + 
+  geom_smooth(se = FALSE) +
+  ggtitle("Empirical Logits vs Dose") 
+```
+
+This appearance of a logarithmic relationship between the Dose and the logits prompts the a log-transformation of the dose to straighten it out (that is, it suggests that the *odds* of tumor are nearly linear in dose).  
+
+```{r}
+ggplot(data = tumors, aes(x = logDose, y = empirical_logits)) + 
+  geom_jitter(width = 0.1, height = 0.1) + 
+  geom_smooth(se = FALSE) +
+  ggtitle("Empirical Logits vs log(Dose)")
+```
+
+This plot suggests that a logistic regression model which includes both `log(Dose)` and `log(Dose)^2` would be appropriate to capture the observed trend in the empirical logits.  Unlike with binary logistic regression, the binomial model lets us measure the lack-of-fit to a proposed model, and compare the fit between models.
+
+## Deviance goodness of fit 
+
+Recall that the deviance goodness of fit test compares a fitted model to a saturated model, or one in which there are as many parameters as there are data points. In these goodness of fit comparisons, the null hypothesis corresponds to the fitted model (which is a reduced model relative to the saturated model), and the alternative hypothesis corresponds to the saturated model. Therefore, a small p-value indicating evidence for rejection of the fitted model in favor of the saturated model is evidence of *lack of fit*.
+
+The `LRstats()` from *vcdExtra* function shows a convenient summary of the fits of one or more model objects.
+
+```{r}
+mod5 <- glm(data = tumors, (Tumor/Total) ~ Dose, weights = Total, family = "binomial")
+mod6 <- glm(data = tumors, (Tumor/Total) ~ logDose, weights = Total, family = "binomial")
+mod7 <- glm(data = tumors, (Tumor/Total) ~ logDose + logDose2, weights = Total, family = "binomial")
+LRstats(mod5, mod6, mod7)
+```
+
+The `LR Chisq` is the residual deviance, which is the sum of the squared deviance residuals.  For instance, for `mod5`, the residual deviance value of 277 comes can be obtained as
+
+```{r}
+resid(mod5, type = 'deviance') %>% raise_to_power(2) %>% sum
+```
+or as
+
+```{r}
+mod5$deviance
+```
+
+This quantity has an approximate chi-squared distribution if the model is correct, which is the basis for the deviance goodness of fit test. `Pr(>Chisq)` provides the p-value for this test.  For `mod6`, let's check that this is equivalent to doing this test "by hand," using the residual deviance and residual df:
+
+```{r}
+pchisq(mod6$deviance, df = mod6$df.residual, lower.tail = FALSE)
+```
+
+Each successive model shows a better fit, as evidenced by the successively larger p-values from the goodness of fit tests. 
+
+## Drop-in-deviance test
+
+Just a reminder that the drop in deviance test is different from the deviance goodness of fit test. Whereas the deviance goodness of fit test provides a comparison between a single fitted model and a saturated model, a drop in deviance test provides a way to compare two fitted models when one of those models is nested within the other one. Put another way, the drop in deviance test is a comparison between a reduced model (null hypothesis) and a full model (alternative hypothesis) -- and we use it in cases where the reduced model is reduced from (or nested in) the full model.
+
+Using the models we have already fit, let's use the `anova()` function to perform a drop in deviance test comparing a reduced model (only `logDose` included) to a full model (`logDose` and `logDose2` included):
+
+```{r}
+anova(mod6, mod7,test="Chisq")
+```
+
+The p-value of the drop in deviance test is quite small, p < 0.0001. This provides convincing evidence in favor of the full model; namely, the one that includes `logDose` and `logDose2`.
+
+## Information criteria for model comparison
+
+Let's look at the `LRstats` again, this time with a focus on the first two columns:
+
+```{r}
+LRstats(mod5, mod6,mod7)
+```
+
+The AIC and BIC, as you may recall from Data Analytics I, are likelihood-based methods for comparing models.  Both penalize models with more parameters, but the BIC generally applies a larger penalty (and hence promotes selection of simpler models).  Models with smaller values are preferred.  The AIC or BIC of a single model is not a measure of the goodness of fit for that model -- the information criteria are only meaningful as comparisons between models. The information criteria can be applied to compare models which are not nested (neither model's parameters are a strict subset of the other's), as long as each model has a likelihood. 
+
+> Which of these three candidate models would we choose, based on the information criteria?  Does this align with the conclusion from the drop-in-deviance test, given that mod6 is nested within mod7?
+
+## Deviance residuals, Pearson residuals - dispersion parameter estimated from Pearson -- chi squared
+
+In the case of binomial logistic regression it can be helpful to look at the deviance and/or Pearson residuals to (a) evaluate the model fit and (b) check for outliers. Provided that the binomial counts are fairly large, both the deviance and Pearson residuals should look like draws from a standard Normal distribution, so too many residuals outside of the [-2,2] interval may be cause for concern. Here' we'll look at a few plots of both the deviance and Pearson residuals.
+
+```{r}
+tumors$residuals_deviance <- residuals(mod7)
+tumors$residuals_pearson <- residuals(mod7, type = "pearson")
+ggplot(data = tumors, aes(logDose,residuals_deviance)) + geom_point()
+ggplot(data = tumors, aes(logDose,residuals_pearson)) + geom_point()
+ggplot(data = tumors, aes(residuals_deviance,residuals_pearson)) + geom_point()
+```
+
+There are no obvious patterns in either of the plots showing the residuals against `logDose`, and there are also no outliers. This is all good -- it suggests that we've done a good job at modeling the log odds of tumors (although we still have to talk about the over dispersion). We created the scatterplot of the Pearson residuals versus the deviance residuals just so you could see how similar they are -- for the most part, they fall along the y = x diagonal. 
+
+When looking at residuals, it can also be useful to plot the residuals versus the fitted values of a model. Again, we're hoping that we *don't* see any patterns in such a plot:
+
+```{r}
+tumors$fitted = predict.glm(mod7,scale="link")
+ggplot(data = tumors, aes(fitted,residuals_deviance)) + geom_point()
+```
+
+There are no clear patterns or problems with this plot, so again we have confirmation that we're using a decent model at this point.
+
+# Dealing with over-dispersion
+
+Over dispersion can arise when there is structure in the data that is not accounted for by a model. A high degree of over dispersion may indicate that important predictors have been omitted, the functional form of the predictors is inadequate to capture relevant features of the data, observations assumed independent are not so, or large outliers are present. When there is evidence of lack of fit, we expect overdispersion.  
+
+From the residuals of `mod7` that we just examined (`mod7` includes `logDose + logDose2`), it doesn't seem that there are outliers. It also seems that we've gotten a good functional form for the predictors (i.e., `logDose + logDose2`). Is there even evidence of lack of fit here?  We looked at the deviance goodness of fit above, but let's repeat it here just for `mod7`:
+
+```{r}
+LRstats(mod7)
+```
+
+The p-value is 0.07, which suggests that our model is a good fit, but just barely.  You also saw in the narrated lectures that the estimated dispersion parameter here is 1.48 -- not wildly larger than one, but larger nonetheless.  Even though there may not be strong evidence for over dispersion here, it makes sense that the counts of fish with tumors are over dispersed because it's not likely that measurements on fish from the same tank are statistically independent.
+
+> When in doubt, assume that counts are over dispersed.
+
+You saw in the narrated lecture that the approach to use in the binomial setting when over dispersion is present is called quasi-binomial logistic regression. We'll perform this in R, and then we'll compare the model output from the quasi-binomial approach to the binomial approach in `mod7`.
+
+
+```{r}
+mod8 <- glm(data = tumors, (Tumor/Total) ~ logDose + logDose2, weights = Total, family = "quasibinomial")
+display(mod7)
+display(mod8)
+```
+
+The fundamental change between `mod7` and `mod8` is that the standard errors of the regression coefficients in `mod8`, the quasi-binomial model are larger than they are in `mod7`. This illustrates the problem with ignoring a lack of statistical independence:
+
+> If responses are not statistically independent, but you fit a model that assumes statistical independence, the mistake you often make is that of underestimating standard errors. This results in p-values being smaller than they should be, and confidence intervals being more narrow than they should be.
+
+A strong disadvantage of the quasi-likelihood (in this case quasi-binomial) approach is that since quasi-likelihoods are not real likelihoods, we cannot use likelihood-based methods of model comparison, like AIC and BIC, to choose between them, nor can we compare them with true likelihood models.  Indeed, the idea of "model comparison" becomes somewhat muddled when we are talking about a collection of things that are not proper probability models to begin with.
+
+You'll learn about an alternative to the quasi-binomial model in Module 7 when we introduce mixed effects models. In that Module, we'll refit the tumor data, including `TankID` as a random effect. You might wonder why we can't just include `TankID` in our logistic regression model to address the over dispersion problem. Recall, however, that there are 20 tanks, so that if we use `TankID` in the model, we'll gobble up all 20 data points before we can estimate all the "tank effects." Look at what happens:
+
+```{r}
+mod9 <- glm(data = tumors, (Tumor/Total) ~ logDose + logDose2 + TankID, weights = Total, family = "binomial")
+summary(mod9)
+```
+
+This model is *over-saturated* -- we've put too many terms in it, and not all of them can be estimated. Notice also that the degrees of freedom correponding to the residual deviance is 0. We should not use this model for inference.
+
+# A Pitfall -- perfect separation
+
+In this section of the lab, we'll discuss a pathology that can arise in logistic regression. We'll show you what happens, and we'll make a suggestion for dealing with the problem.
+
+First, we'll create some fake data:
+
+```{r}
+y <- c(0,0,0,0,1,1,1,1)
+x1 <-c(1,2,3,3,5,6,10,11)
+x2 <-c(3,2,-1,-1,2,4,1,0)
+df <- data.frame(y, x1, x2)
+df
+```
+
+Take a look at a plot of the data below, and it will be easy to see what the potential problem is -- somewhere between 3 and 5, there's perfect separation between the y = 0 responses and the y = 1 responses. The question is, where is "somewhere?"
+
+```{r}
+qplot(data = df, x = x1, y = y, main = "Note the clean split between 0's and 1's") + geom_point()
+```
+
+
+The following will not work -- try inserting an "r" to make it executable. 
+
+```{}
+m1 <- glm(y ~ x1 + x2, family = binomial, data = df)
+```
+ 
+This generates an error, because `x1` predicts *too well*. There is no unique "maximum likelihood estimate" for the coefficient on `x1`, because there are too many super-excellent solutions, and the numerical algorithm behind the `glm()` function just can't choose. This might seem like the silliest possible problem to have -- that there are *too many* good solutions -- but saying that doesn't make the algorithm converge.
+
+If we really believe that we can predict `y` perfectly from `x1`, we could throw out the whole model and just write down a decision rule like "predict y = 1 if x1 >= 4, predict y = 0 otherwise." Of course, we don't know if this is a better or worse rule than, say, "predict y = 1 if x1 >= 3.5, predict y = 0 otherwise" -- the choice of '4' as the cutpoint was arbitrary.  That is, we might have the same problem that the `glm()` algorithm had -- which cut-point is the best one?! 
+
+The real underlying issue here is that we should not believe that we've derived a perfect classifier (i.e., a decision rule that says when y = 1 and when y = 0) from 8 data points! In fact, in the fake data we created above, we also created a second explanatory variable, `x2`, and we never even used it.
+
+An alternative approach sidesteps the problem by directly imposing our belief that a perfect classifier is too good to be true, and so it allows for estimating a coefficient on `x1`. This approach, a Bayesian generalized linear model, is well beyond the scope of this course, but you can nevertheless see it in action using the `bayesglm()` function in the *arm* package:
+
+```{r}
+bayes1 <- bayesglm(y ~ x1 + x2, family = binomial, data = df, prior.df = 1)
+summary(bayes1)
+```
+
+You should still take a careful look at this model summary. In particular there were 46 iterations of the Fisher scoring algorithm -- even with the prior specification about imperfect separation, the algorithm still took a while to find a solution.
+
+# Test for difference in proportions
+
+Another important application of logistic regression is its use in testing the difference in two proportions. We'll return to the Berkeley Admissions data to take a look.
+
+```{r} 
+ (UCBA_sum <- t(margin.table(UCBAdmissions,c(1,2))))
+```
+
+And remember that we looked at the equivalence between `prop.test()` and `chisq.test()`.
+
+```{r}
+prop.test(UCBA_sum)
+chisq.test(UCBA_sum)
+```
+
+Now let's perform the same test, using logistic regression.
+# Check code: gender should be factor and admit is factor with 0 levels
+
+```{r}
+UCBA_case <- expand.dft(UCBA_sum)
+UCBA_case %<>% mutate(Admit = factor(Admit,levels(Admit)[2:1]))
+  # make sure that "Rejected" is the failure level in glm
+head(UCBA_case)
+test1 <- glm(data = UCBA_case, Admit ~ Gender, family = binomial)
+summary(test1)
+```
+
+The relationship to `prop.test()` may not be immediately clear, and this is partly because the logistic regression output is on then model scale -- in this case the log odds. Take a look at the `z value` corresponding to the `GenderMale` variable. If you take the square of this value, you get 91.26, which is quite similar to the `X squared` value you get from `prop.test()` and from `Chisq.test`. Recall that the square of a standard Normal random variable is a Chi-square random variable, and this helps to explain the similarity.
+
+If we perform the appropriate back-transformations from the logistic regression output, we'll see the correspondence to the test for a difference in proportions:
+
+```{r}
+plogis(-0.83049) #Pr(Admit|Female)
+plogis(-0.83049+0.61035) # Pr(Admit|Male)
+```
+
+# Lab 4 Assignment
+
+## Question
+
+Here we will return to the UCBAdmissions dataset and fit a logistic regression model for the count of students admitted (out of the total applicants) for each combination of the factors gender and department.  The usual drill applies -- submit your answers as an RMarkdown document, following the instructions given in the previous labs.
+
+(a) Construct an informative ggplot() of the empirical logits of admission proportion vs gender and department.  It's up to you what aesthetics to map to which variables -- there is more than one right answer here.  
+
+Some tips for part (a):
+
+- You can use the `group` argument to geom_line() to connect points within a group -- for instance, given a plot with Gender on the x axis and a variable called `eLogits` on the y, you could add `geom_line(aes(group = Dept, x = Gender, y = eLogits))`, where the slope of the connecting lines would correspond to the sign and magnitude of the difference in empirical logits (log of observed odds ratio) between genders within each department.  
+
+- You can also incorporate information about the total number of applicants to each department into your plot.  For instance, supposing you had a data frame with separate columns containing counts of "Admitted" and "Rejected" by sex and department, you could map the number of applicants to the size of the plot points using `geom_point(size = Admitted + Rejected)`. 
+
+(b) Based on your plot from (a), which variable (gender or department) appears to account for more of the variability in admissions?  Explain.
+
+(c) Fit an appropriate (binomial) logistic regression model for admissions.  What is the estimated dispersion parameter?  Is there evidence of lack of fit? 
+
+(d) Construct a plot of residuals vs fitted values (try just `plot`-ing your fitted model object).  From this plot, can you identify a source for any fit problems encountered in part (c)?
+
+(d) Refit the binomial model above, but excluding the data from department A.  Now what is the estimated dispersion parameter?  Based on the p-value, what would you conclude about the effect of Gender on admissions (to departments other than A) using this model?     
+
+(e) The approach in part (d) allowed us to keep the binomial likelihood model, but only by performing an unprincipled exclusion of some apparently-legitimate data that happened to be "outlying".  
+
+To avoid this, we'll refit the model for all departments with the quasibinomial family.  
+
+Using the quasibinomial model for all departments, what do you conclude about the effect of Gender on admissions?  Support your conclusion by constructing and interpreting a 95% confidence interval for 
+
+$P_{diff} = [P(Admit | (Department, Male)) - P(Admit | (Department, Female))]$ 
+
+That is, construct an interval on the model scale, then backtransform to the data scale.  Be careful with the direction (male higher or female higher) of the observed difference in conditional probability of admission.    
+

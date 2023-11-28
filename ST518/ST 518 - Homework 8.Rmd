@@ -1,0 +1,88 @@
+---
+title: "ST 518 - Homework 8"
+author: Nora Quick
+output: pdf_document
+---
+
+```{r setup, include=FALSE, message=FALSE}
+library(tidyverse)
+library(openintro) # contains email data
+library(ggplot2)
+library(vcdExtra)
+library(magrittr)
+library(MASS)
+library(lme4)     # access the mixed functions
+library(VGAM)     # contains crash data
+library(tree)     # for classification trees
+library(boot)     # contains the cv.glm function
+```
+
+
+# R Question:
+## 1. Consider the crashi data in the VGAM library that we examined in Lab. Sometimes people will fit multiple linear regression models to data like this, not recognizing that the responses are counts.
+
+### a. Using the Time.Cat and Day.Cat variables that we created in Lab, fit a multiple linear regression model to the counts—be sure to include the interaction between Time.Cat and Day.Cat just as we did in the lab. How does the model fit compare to the negative binomial regression model that you fit in lab? Please explain.
+```{r}
+data(crashi)
+
+hour <- rownames(crashi) ## grab the hours
+crashi2 <- stack(crashi) ## combine 7 columns of crashes into 1
+names(crashi2) <- c("Count","Day")
+crashi2$Day <- factor(crashi2$Day,levels(crashi2$Day)[c(2,6,7,5,1,3,4)])  # make sure the days are ordered correctly
+crashi2$Hour <- as.numeric(rep(hour, ncol(crashi)))  
+
+crashi2 %<>% mutate(.,Day.Cat = ifelse((Day != "Fri" & Day != "Sat" & Day != "Sun"),"Weekday",as.character(Day)), Time.Cat = cut(Hour,
+	breaks = c(-1, 5.5, 11.5, 18.5, 25),
+	labels = c("Early.Morn", "Morn", "Afternoon", "Evening")))
+head(crashi2)
+```
+
+```{r}
+mod <- glm(Count ~ Day.Cat * Time.Cat, data = crashi2)
+summary(mod)
+
+mod2 <- glm.nb(Count ~ Day.Cat * Time.Cat, data = crashi2)
+summary(mod2)
+
+#cbind(mod$coefficients, mod2$coefficients)
+```
+
+The model fit compared to the negative binomial fit appears to be overdispersed. In the first model we have a large residual deviance. However, looking at the AIC values the two models aren't very different and possibly neither of them are a very good fit for the data.  
+
+
+### b. Now compare the predicted number of crashes in the early morning on Saturdays using your model from part (a) and the negative binomial model from the Lab. Are they the same? Different?
+```{r}
+newdat <- data.frame(Day.Cat = "Sat", Time.Cat = "Early.Morn")
+
+## predict using Poisson regression and NB regression
+predict(mod, newdata = newdat, type = "response")
+predict(mod2, newdata = newdat, type = "response")
+```
+
+The predicted crashes in the early morning on Saturdays using both my model and the negative binomial model are the same. 
+
+
+### c. Now examine the standard errors associated with the predictions from part (b). Are they the same? Different? Which model do you prefer? Please explain.
+```{r}
+predict(mod, newdata = newdat, type = "response", se.fit = TRUE)
+predict(mod2, newdata = newdat, type = "response", se.fit = TRUE)
+```
+
+The standard errors with the two predictions are different. After looking at the summary of both models and the standard errors I prefer the negative binomial model because it seems like a better fit. It has a more reasonable residual deviance/df and we want a smaller standard error which the negative binomial model provides.
+
+
+
+# Conceptual Question
+## 2. lease find an article or web posting in which the authors discuss the statistical issues with large datasets. Write a short paragraph in which you identify at least one of the issues that the authors raise. Also please comment on whether you agree with or disagree with their assessment. Please submit either a PDF copy of the article you read, or a web link to the article or post.
+
+The article I found had a few points about the statistical issues with large datasets. Firstly, with large sample sizes the data will produce small variances with large sample sizes which leads to large staistics and many, many statisticaly significant results (some which may not be significant at all). Next there is the big issue of bias. Large datasets are things such as websites tracking users or census's which only take in data from users or people who answer a census. This leads to a population of people that may not be representative of what we need from the large data.
+
+To both points I agree. If we are grabbing so much data that everything is significant there is an issue because clearly everything cannot be significant. We need to find subsets so that we are looking at exactly what we want to see. Additionally, I agree that there will likely always be large bias in data because we cannot get everyone even in large datasets and there is certainly the danger of only seeing a bias of the people/data involved/included. 
+
+https://journals.sagepub.com/doi/pdf/10.1177/2053951715602495
+
+
+
+
+
+

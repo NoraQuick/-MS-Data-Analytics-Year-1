@@ -1,0 +1,60 @@
+---
+title: "ST 518 - HW2"
+author: Nora Quick
+output: pdf_document
+---
+
+# R Questions
+
+```{r}
+# left
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
+
+# right
+ggplot(data = mpg) + 
+  geom_smooth(mapping = aes(x = displ, y = hwy))
+```
+
+```{r}
+ggplot(data = mpg) + 
+  geom_smooth(mapping = aes(x = displ, y = hwy, linetype = drv))
+```
+
+
+##2. Run this code in your head and predict what the output will look like. Then, run the code in R and check your predictions.
+This will create a plot with displ on the x-axis and hwy on the y-axis with colour bd on drv. It will add both points and a smooth line.
+
+```{r}
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy, color = drv)) + 
+  geom_point() + 
+  geom_smooth(se = FALSE)
+```
+My prediction was for the most part accurate.
+
+##3. What does show.legend = FALSE do? What happens if you remove it?
+show.legend = FALSE removed the legend from the right side. IF you remove it, it will add the legend back.
+
+##4. What does the se argument to geom_smooth() do?
+It adds a grey boarder for confindence interval around the smooth lines. 
+
+##5. Will these two graphs look different? Why/why not?
+No, they will not look different because they have the same information in different formats. 
+
+##6. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

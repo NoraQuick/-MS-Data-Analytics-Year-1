@@ -1,0 +1,65 @@
+---
+title: "Module 1 Lab Submission"
+author: "Nora Quick"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In this made-up example, we have three different nutritional supplements (A, B, and C are the group labels), and we are interested in how these supplements affect sleep duration.  We randomly assign 15, 20, and 30 people to the supplements, respectively (so 15 to group A, 20 to group B, and 30 to group C). We record the number of hours that each person sleeps during one night after a week of taking their assigned supplement.  
+
+In the code below, we simulate data for this scenario. There are many ways to do this, and the following code is written for readability rather than coding aesthetics/speed or runtime efficiency.  Note that in our simulation, the *average* number of hours of sleep per night is the same for all three groups (that is, the null hypothesis tested by one-way ANOVA is true). Also note that the *standard deviations* (and therefore *variances*) of the three populations differ!
+
+```{r}
+set.seed(2881)
+
+group_sizes <- c(15, 20, 30)
+group_means <- c(8, 8, 8)
+group_sds <- c(1, 2, 3)
+
+group1 <- rnorm(group_sizes[1], group_means[1], group_sds[1])
+group2 <- rnorm(group_sizes[2], group_means[2], group_sds[2])
+group3 <- rnorm(group_sizes[3], group_means[3], group_sds[3])
+
+sleepData <- data.frame(Sleep=c(group1, group2, group3), 
+                        Group=rep(c('A', 'B', 'C'), group_sizes))
+
+head(sleepData)
+```
+
+Write code in the chunks below to answer the following questions:
+
+* **Make boxplots of the sleep durations by group**
+
+    ```{r}
+   library(ggplot2)
+   qplot(Sleep, Group, data = sleepData, geom = "boxplot")
+    ```
+
+* **What is the sample mean for each of the three groups A, B, and C?**
+    
+    ```{r}
+   tapply(sleepData$Sleep, sleepData$Group, mean)
+    ```
+
+* **Perform a one-way ANOVA to assess whether the population means differ across treatments A, B, and C, assuming all of the population variances are equal.**
+
+    ```{r}
+   oneway.test(Sleep ~ Group, data = sleepData, var.equal = T)
+    ```
+
+* **Perform a one-way ANOVA to assess whether the population means differ across treatments A, B, and C, *without* assuming all of the population variances are equal.**
+
+    ```{r}
+   oneway.test(Sleep ~ Group, data = sleepData, var.equal = F)
+    ```
+    
+* **Perform a Kruskal-Wallace Test to compare the sleep durations for treatments A, B, and C.**
+
+    ```{r}
+   kruskal.test(Sleep ~ Group, data = sleepData)
+    ```
+
+

@@ -1,0 +1,370 @@
+---
+title: "ST 518 Module 7 Lab"
+subtitle: Generalized Linear Mixed Models
+output:
+  html_notebook: default
+---
+
+In this lab we'll look at some simulated data that provide a nice demonstration of the interpretation problem presented by generalized linear mixed modeling. We'll also go through another example of fitting a GLMM and making sense of the output.
+
+To start off, please load these libraries that you'll need for this lab. Please note that `robustbase` is new, so you will likely have to install it first.
+
+```{r, echo = TRUE}
+library(tidyverse)
+library(robustbase) # contains data we'll use
+library(ggplot2)
+library(vcdExtra)
+library(magrittr)
+library(MASS)
+library(lme4)     # access the mixed functions
+```
+
+# Simulation of Machine Defects
+
+Let's suppose that we have 10 machines producing a product and that we record the number of defective items that each machine produces at four different times (times 1, 2, 3, 4). In this scenario, we might reasonably expect there to be similarities in numbers of defects for the same machine and differences in numbers of defects from different machines. In this way, thinking of machine as a grouping variable, we would include it in an analysis as a random effect. The response (number of defects) is a count, and in this simulation, we'll use the Poisson distribution to generate the numbers of defects. 
+
+We'll simulate data from a Poisson model, and use a mixed effects Poisson regression model (a particular kind of GLMM) to fit the data and demonstrate a few things. We'll also fit a linear mixed effects model so we can demonstrate the important difference between GLMM and LMM in terms of the interpretation of fixed effects. 
+
+
+```{r}
+set.seed(090901) ## set seed so we all get the same results
+
+Machine <- as.factor(rep(1:10, rep(4, 10))) # 10 machines, each with 4 defect counts
+Time <- rep(1:4, 10) # Time variable: 1,2,3,4 for each Machine
+
+RE <- rnorm(10, 0, 2) # generate 10 random effects, one for each Machine
+                              # random effect variance is  4.
+eta <- rep(RE, rep(4, 10)) # replicate the random effects four times for each Machine
+
+# See what we have so far:
+cbind(Machine, Time, eta)[1:12, ]
+```
+
+The R output above shows the data for the first three machines. Each machine has four time points and one random effect that remains the same for each time point. Now let's simulate defects from a mixed effects Poisson regression model with the true coefficient for time is 1.1 when $\lambda$ is on the log scale.
+
+
+```{r}
+set.seed(100233)
+llambda <-  1.1 * Time + eta
+lambda <- exp(llambda)
+Defects <- rpois(40, lambda)
+Simu_dat <- data.frame(Machine,Time,eta,Defects)
+head(Simu_dat)
+```
+
+Now, let's take a look at the data, on the data scale:
+
+```{r}
+ggplot(data = Simu_dat, aes(Time, Defects, group=Machine)) + geom_point() + geom_line()
+```
+
+It's actually difficult to visualize the data on the data scale because there's one machine with *a lot* of defects, and so all the defects for the other machines are squashed down below about 1000 on the y-axis. Let's recreate the plot using the log of the defects.
+
+```{r}
+ggplot(data = Simu_dat, aes(Time, log(Defects+0.1), group=Machine)) + geom_point() + geom_line()
+```
+
+Now, let's fit a GLMM to the simulated data and after that we'll generate a plot of the results. 
+
+```{r}
+sim1 <- glmer(Defects ~ Time + (1|Machine),
+	data = Simu_dat, family = poisson)
+summary(sim1)
+```
+
+Remember that we simulated these data with $\beta_0 = 0$, $\beta_1 = 1.1$ and the random effect variance, $\sigma^2_{eta} = 4$. The model summary gives $\hat{\beta}_0 = 0.17$ (0.61); $\hat{\beta}_1 = 1.11$ (0.01) and $\hat{\sigma}^2_{\eta} = 3.67$ The numbers in parentheses after the fixed effect estimates are the standard errors corresponding to those estimates. The GLMM does a very good job of estimating the  the parameters, which should not be all that surprising since this is a relatively simple simulation. 
+
+The bigger take-away is still to come. Now, we'll plot the fitted model.
+
+```{r}
+Simu_dat$fits <- predict(sim1)
+ggplot(Simu_dat,aes(Time,log(Defects+0.1),by=Machine)) + geom_point() + geom_line(aes(Time,fits))
+```
+
+This plot shows the fitted model for each Machine. Let's now add the line that we obtain from just the fixed effects estimates.
+
+```{r}
+ggplot(Simu_dat,aes(Time,log(Defects+0.1),by=Machine)) + geom_point() + geom_line(aes(Time,fits)) + geom_abline(intercept = 0.17, slope = 1.11,color = "red",size=1.5)
+```
+
+This all looks OK -- the fitted line from just the fixed effect estimates (red, thicker line) certainly looks like the average of the fitted lines for all of the machines.
+
+> If you are content to describe the results on the model scale, in this case in terms of log(Defects), then you can interpret the fixed effects estimates without first conditioning on the random effects.
+
+What if we look at this plot back on the data scale, however.
+
+```{r}
+ggplot(Simu_dat,aes(Time,Defects,by=Machine)) + geom_point() + geom_line(aes(Time,exp(fits))) + geom_line(aes(x =Time,y=exp(0.17+1.11*Time)),color="red",size=1.5)
+```
+
+Now, back on the data scale, we see the problem -- the fixed effects estimates by themselves do not well-represent everything that these data contain. The one machine that has unusually high numbers of defects is *not at all* well-represented by the thick, red line. If you were to communicate the results using the fixed effects estimates only, you would miss a major part of this story: there's a big problem with one of the machines! 
+
+Let's dig a little deeper still. What if we remove that one machine with the large number of defects from the plot above?
+
+```{r}
+tapply(Simu_dat$Defects,Simu_dat$Machine,sum)
+```
+
+It's Machine 2 that has all the problems. 
+
+```{r}
+ggplot(subset(Simu_dat,Machine!=2),aes(Time,Defects,by=Machine)) + geom_point() + geom_line(aes(Time,exp(fits))) + geom_line(aes(x =Time,y=exp(0.17+1.11*Time)),color="red",size=1.5)
+```
+
+Even among the remaining machines, you can see that the fixed effect estimates do not really represent what's going on here -- there remains another machine that in particular doesn't look like the others in terms of numbers of defects.
+
+Even though these are simulated data, you can see that in this particular case, the interesting answer *isn't* about the fixed effects estimates, it's about the identification of one Machine (maybe more!) that has an unusual number of defect relative to the others.
+
+There's a good display in Agresti, Figure 13.1 on page 496, that provides another demonstration of how the fixed effect estimates from the GLMM does not well-represent all the structure in the data. 
+
+> Because of the presence of the random effect, and the non-linearity of the model on the data scale, the results from GLMM must be interpreted conditionally upon the random effects. 
+
+# Epilepsy Example
+
+Now that we've examined some simulated data, let's look at some real data to see how GLMM can be applied to actual data. The epilepsy data set contains information on the number of epilepsy attacks patients had during four follow-up periods post-treatment. Each patient received either an experimental anti-seizure treatment or a placebo, and for each patient additional information -- baseline number of epilepsy attacks in the 8 weeks prior to randomization and age -- is also included. The question of interest here is whether the treatment, a drug called **progabide**, reduced the number of seizures.
+
+Let's start by taking a look at the data and its help file.
+
+```{r}
+?epilepsy
+data(epilespy)
+head(epilepsy)
+xtabs(formula=~Trt,data=epilepsy)
+```
+
+The variable `Ysum` contains the cumulative sum of epilepsy attacks beginning at the treatment period to the end of the 8-week study while the variable `Base` contains the total epilepsy attacks in the 8 weeks prior to treatment. We might first investigate if the average number of seizures per week after treatment is related to the average number of seizures per week prior to treatment.
+
+```{r}
+ggplot(data=epilepsy) +
+  geom_point(aes(x = Base / 8, Ysum / 8)) +
+  xlab("Seizures per Week before Treatment") +
+  ylab("Seizures per Week after Treatment") + facet_wrap(~Trt) +
+  geom_abline(slope = 1,intercept = 0) ## reference line
+```
+
+From these plots, there does seem to be a relationship between average number of seizures before and after treatment though it's somewhat difficult to see everything we might want to see because much of the data are clumped at low numbers of seizures. Let's try plotting the data on the log-log scale, adding a small number to each of the counts to avoid the log(0) problem.
+
+```{r}
+ggplot(data=epilepsy) +
+  geom_point(aes(x = log(Base+0.1), y = log(Ysum+0.1))) + 
+  xlab("Seizures per Week before Treatment (log scale)") + 
+  ylab("Seizures per Week after Treatment (log scale)") +
+  facet_wrap(~Trt) +
+  geom_abline(slope = 1,intercept = 0)
+```
+
+It certainly seems as though patients who have a lot of seizures before treatment also have a lot of them after treatment, regardless of whether they actually receive the treatment or the placebo.
+
+There are any number of things we might do next. For example, we can also look at a table of improvements to see what proportion of patients on the placebo improved after the treatment period and what proportion of patients on the treatment improved after the treatment period.
+
+```{r}
+epilepsy$improvement <- ifelse(epilepsy$Ysum / 8 < epilepsy$Base / 8,"improved","didn't")
+xtabs(formula=~Trt+improvement, data=epilepsy)
+```
+
+So 12/28 or 43% improved on placebo, whereas 21/31 or 68% improved on
+progabide. Let's look at odds of improvement.
+
+```{r}
+success = c(12, 21) ## number who improved on the placebo, progabide
+fail = c(16, 10) ## number who did not improve on the placebo, progabide
+resp = cbind(success, fail)
+trt = c(0, 1) ## coding 0 as the placebo group, 1 as progabide
+out = glm(resp ~ trt, family=binomial) ## simple GLM 
+summary(out)
+
+1-pchisq(3.73, 1)
+```
+
+With a p-value of 0.05344, there is moderate to weak evidence of a treatment effect. The odds of improvement on progabide are estimated to be 2.8 times the odds of improvement on placebo.
+
+**However**, notice that so far, we have disregarded a lot of the information here (Age of patient and during which of the time periods the seizures occurred). If the researcher's question of interest is only in reducing the total number of seizures in the 8-week follow-up period, then perhaps one of the methods above would suffice. The structure of the experiment, however, with repeated measurements per subject, suggests that we might also learn something about the progression of seizures over the eight week post-treatment period. For this, we'll turn to a GLMM using subject as the random effect. 
+
+We first have to gather all of the responses, Y1, Y2, Y3, and Y4, together into one column (called `Seizures`), and add a new column (`Visit`) to keep track of which seizure counts correspond to which visits, post-treatment. Then we'll be able to look at plots of the counts across time. 
+
+```{r}
+epil_long <- gather(epilepsy,key = Visit,value = Seizures, Y1, Y2, Y3, Y4)
+epil_long %<>% arrange(.,ID)  # sort by patient ID
+epil_long %<>% mutate(.,ID = as.factor(ID),Visit = rep(1:4,59))
+        # change ID to factor and Visit to numeric
+head(epil_long)
+ggplot(epil_long,aes(Visit,Seizures,by=ID)) + geom_line() + facet_wrap(~Trt)
+```
+
+Well, these look a  little bit like spaghetti. Let's check on the log scale.
+
+```{r}
+ggplot(epil_long,aes(Visit,log(Seizures+0.1),by=ID)) + geom_line() + facet_wrap(~Trt)
+```
+
+Still spaghetti, but at least we can see a couple of things:
+
+1. It's not clear that progabide is generally better, and for one patient it's particularly bad (though we should check the baseline number of seizures for that patient).
+
+2. It's not clear that there are differences in seizure numbers through time on either medication (although it's a little hard to tell when some of the counts jump down to zero).
+
+Just to make a thorough examination of the data, let's check for any differences in the Ages or in the Baseline numbers of seizures between the two groups. This was a randomized study, so there *shouldn't* be differences in these covariates (i.e., the randomization should balance these out), but it never hurts to check. 
+
+```{r}
+ggplot(data = epilepsy, aes(x = Trt, y = Base)) + geom_jitter(width=.01)
+ggplot(data = epilepsy, aes(x = Trt, y = Age)) + geom_jitter(width=.01)
+```
+
+There's not really any evidence that age or baseline number of attacks differ between the placebo and progabide group.  There is one subject in the progabide group with an unusually high number of seizures at baseline -- you can check to see if this is the same patient with the unusually high number after treatment. 
+
+Let's fit a GLMM and see if our visual inspections are validated.
+
+```{r}
+mod1 <- glmer(Seizures ~ Trt + Base + Age + Visit +
+		(1|ID), family = poisson, data = epil_long)
+summary(mod1)
+```
+
+## Picking the Random Effects
+
+In the model we just fit, we used a random intercepts model that just includes a random effect for patient. Specifically what this means that is the intercept term will be estimated differently for each patient. 
+
+Depending on the particular problem, this may or may not be a reasonable way to think about the variation in the data.  In the context of this epilepsy example, it could be that the different patients show different *rates of change* in their numbers of seizures -- this would suggest that each patient have his or her own effect of visit. We can accomplish this by putting in a random effect for visit.
+
+Next we'll fit a random intercepts and slopes model with `Visit` as the random slope. Again, this seems like a reasonable thing to do if we expect that some subjects will have a different rate of increase or decrease of number of seizures over time than other subjects.
+
+```{r}
+mod2 <- glmer(Seizures ~ Trt + Base + Age + Visit + (1 + Visit|ID), family = poisson, data = epil_long)
+# oops this didn't converge --- try the initialization trick again:
+(init <- getME(mod2, name = c("theta", "fixef")))
+mod2 <- glmer(Seizures ~ Trt + Base + Age + Visit + (1 + Visit|ID), family = poisson, data = epil_long, start = init)
+summary(mod2)
+```
+
+The estimated variance for the `Visit` random effect is pretty small (0.02), but the fixed effect estimate for `Visit` is pretty small too (-0.06), so that random effect variance may still be important to consider. Remember that we can compare the two models with the `AIC` and `BIC` functions:
+
+```{r}
+AIC(mod1, mod2)
+BIC(mod1, mod2)
+```
+
+Both criteria indicate that the model with random slopes for `Visit` is somewhat preferred over the model with only random intercepts, though simplicity and that the AIC/BIC are not very different (i.e., each for `mod1` vs `mod2`) would argue for using the model with only one random effect. As mentioned in last lab, in a real problem situation, we really want to think more carefully about what the model should be **before** fitting anything to the data. Choosing which model after fitting many models is a type of data snooping and should generally be avoided.
+
+## Looking at the results
+
+Let's go back to the random intercept only model and interpret/understand the model output. This model is already a bit complex but is somewhat simpler than the random intercepts and random slopes model (`mod2`).
+
+```{r}
+summary(mod1)
+```
+
+Before we comment on the model summary information, let's perform some diagnostics to see if we feel like we have a good model to work with.
+
+### Residual Diagnostics
+
+Let's also take a look at some residual plots.
+
+```{r}
+epil_long$resid <- residuals(mod1)
+epil_long$fits <- exp(predict(mod1))
+
+# first some plots of the residuals vs. explanatory variables 
+ggplot(epil_long,aes(Visit,resid)) + geom_point() + facet_wrap(~Trt)
+ggplot(epil_long,aes(Base,resid)) + geom_point() + facet_wrap(~Trt)
+ggplot(epil_long,aes(Age,resid)) + geom_point() + facet_wrap(~Trt)
+
+# now a look at the normality of the random effects
+qqnorm(unlist((ranef(mod1)$ID)))
+qqline(unlist((ranef(mod1)$ID)))
+
+# finally, fitted values versus observations
+ggplot(epil_long,aes(Seizures,fits)) + geom_point() + facet_wrap(~Trt) + geom_abline()
+ggplot(epil_long,aes(log(Seizures+0.1),log(fits+0.1))) + geom_point() + facet_wrap(~Trt) + geom_abline()
+
+```
+
+There are a number of things to discuss based on these plots:
+
+1. It looks like there's evidence of some curvilinearity in the relationship between `Visit` and `Seizures`; the nature of that curvilinearity might be different for the two treatment groups (look at plot of `resid` versus `Visit`).  You could add `Visit2` term, the square of `Visit`, or you could revert `Visit` back to a factor variable.
+
+2. There is what appears to be one large outlier in the placebo group. If we had access to the original researchers, we might have been able to find out about that unusual value.
+
+3. It seems that the random effects are not strictly Normal, especially in the upper tail. This may be because we haven't gotten the fixed effects part of the model correctly specified.
+
+4. There are some zeroes among the `Seizure` values, and the model is not fitting those very well -- we may need to think about a zero-inflated model and/or a model for over dispersion.
+
+## More Model Fitting
+
+There is a `glmer.nb()` function in the `lme4` package, so we'll try using that below. There are zero-inflated GLMM models, but they get rather complicated. We'll leave it to you to explore those if you're interested. Also, you might want to investigate what happens when you put terms in the model for the square of `Visit` and the interactions between `Trt` and the `Visit` variables (i.e., `Visit` and it's square). Again, we'll leave this to you for further exploration.
+
+```{r}
+# first, glmer.nb with the same form as above
+mod3 <- glmer.nb(Seizures ~ Trt + Age + Base + Visit + (1|ID), data = epil_long)
+init <- getME(mod3,name=c("theta","fixef"))
+mod3 <- glmer.nb(Seizures ~ Trt + Age + Base + Visit + (1|ID), data = epil_long, start = init)
+summary(mod3)
+```
+
+Let's compare this model to the Poisson GLMM above (`mod1`):
+
+```{r}
+AIC(mod1,mod3)
+BIC(mod1,mod3)
+```
+
+OK, it seems like the negative binomial model is more appropriate here, so we'll proceed with that. If you look at the summary information for `mod3` it now appears that there's still only marginal evidence in support of a treatment effect (p = 0.09).  Next, we've replicated the residual diagnostics that we showed above, but for the `mod3` object.
+
+```{r}
+epil_long$resid <- residuals(mod3)
+epil_long$fits <- exp(predict(mod3))
+
+# first some plots of the residuals vs. explanatory variables 
+ggplot(epil_long,aes(Visit,resid)) + geom_point() + facet_wrap(~Trt)
+ggplot(epil_long,aes(Base,resid)) + geom_point() + facet_wrap(~Trt)
+ggplot(epil_long,aes(Age,resid)) + geom_point() + facet_wrap(~Trt)
+
+# now a look at the normality of the random effects
+qqnorm(unlist((ranef(mod1)$ID)))
+qqline(unlist((ranef(mod1)$ID)))
+
+# finally, fitted values versus observations
+ggplot(epil_long,aes(Seizures,fits)) + geom_point() + facet_wrap(~Trt) + geom_abline()
+ggplot(epil_long,aes(log(Seizures+0.1),log(fits+0.1))) + geom_point() + facet_wrap(~Trt) + geom_abline()
+
+```
+
+We still see many of the same problems we noted above, but despite that we won't proceed beyond this model for the purpose of this Lab. *If* this were the final model from which we were to report results, we might say something like:
+
+> We fit a generalized linear mixed model to the epilespy data, assuming that the number of seizures follows a negative binomial distribution and with a log link. The fixed effects are age, baseline number of seizures and visit, and the random effect is subject, to account for the repeated measurements for each subject. From this model, there is no evidence of an effect of the progabide treatment (p = 0.09), and the only factor that appears to be associated with the number of seizures post-treatment is the baseline number of seizures.
+
+One final note. *If* our final model does provide evidence of a treatment effect, we can go ahead and report the p-value. It will be difficult to quantify the treatment effect, however, because you'll have to do that in the context of conditioning on the random subjects. 
+
+# Lab Questions
+
+In the `epilepsy` data, we really need to use a mixed effects model to account for the fact that observations within a subject are almost certainly not independent. Let's suppose, however, that we are a naive statistician and do not realize that we need to account for this within subject correlation. Instead we fit a Poisson GLM and completely ignore the fact that we have non-independent observations (to be clear, this is **not** a correct way to do the analysis, but we are fitting the model to compare the results we get to the results from the more appropriate GLMM we fit above).
+
+Please write 1-2 sentences in response to the following questions.
+
+```{r}
+mod.norand <- glm.nb(Seizures ~ Trt + Age + Base + Visit, data = epil_long)
+summary(mod.norand)
+```
+
+```{r}
+summary(mod3)$coefficients
+summary(mod.norand)$coefficients
+```
+
+1.) How do the coefficient estimates for the fixed effects compare in the two models? Why do you think the coefficient estimates are approximately the same or very different?
+
+2.) How do the standard errors for the coefficients compare in the two models? Why do you think the standard errors are approximately the same or very different?
+
+3.) How do the p-values compare for the two models? 
+
+4.) Based on your answers from (1) to (3), what is the danger in assuming independence between all the observations, when, in fact, some of the observations are not independent?
+
+Let's next look at the first 40 fitted values for the incorrectly fitted model without a random effect for subject and the GLMM with a random effect for subject.
+
+```{r}
+cbind(fitted(mod.norand), fitted(mod3))[1:40, ]
+```
+
+5.) How do the fitted values from the two models compare? Are the fitted values from one model consistently higher or lower than the other model?
+
+6.) Notice fitted values 37 through 40. These values correspond to the 10th subject in the data set (subject ID 112). Can you justify why these fitted values are much higher in the GLMM? In your justification, can you include a plot of some sort that highlights this particular subject?
+
