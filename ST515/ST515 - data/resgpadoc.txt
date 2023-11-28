@@ -1,0 +1,12 @@
+
+RESGPA - residency and GPA information for 90 students randomly selected
+from a large population of OSU students that graduated in the 1990's.
+The sampling was restricted to yield equal numbers of students (30) in
+each residency group.
+------------------------------------------------------------------------
+
+RES	residency: 1 = OR resident, 2 = nonresident (out of state)
+	           3 = international
+
+CUMGPA	cumulative grade-point average at OSU (0 to 4)
+

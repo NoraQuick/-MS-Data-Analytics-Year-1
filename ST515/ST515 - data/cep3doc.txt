@@ -1,0 +1,12 @@
+
+CEP3 - sizes of macrozooplankton (cladocerans and copepods, excluding
+nauplii) in six experimental ponds at Cornell University, three of which
+contained planktivorous fish (bluegill sunfish and pumpkinseeds) and three
+of which lacked fish.  Each record represents an individual zooplankter.
+
+   pond         pond number (1 through 3); note that pond 1 in the no-fish
+                   treatment is different from pond 1 in the fish treatment
+   fish         0 = no fish, 1 = fish present
+   time         1 = sample taken during the day, 2 = sample taken at night
+   size         body size in mm
+

@@ -1,0 +1,10 @@
+
+PHYTO - data from a ``meta-analysis'' of the effects of nutrients and 
+fish on phytoplankton biomass in 11 studies.  A single replication of a 
+nutrients x fish factorial design is available from each study.
+
+	study	number of experiment (1-11)
+	fish	0 = low fish, 1 = high fish
+	nutr 	0 = low nutrients, 1 = high nutrients
+	biomass	phytoplankton biomass
+

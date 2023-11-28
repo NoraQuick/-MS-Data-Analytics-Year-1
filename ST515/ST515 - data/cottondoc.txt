@@ -1,0 +1,11 @@
+
+COTTON - A study of the effect of chemical treatment on the strength of
+cotton.  On each of three days, five different chemical treatments were
+randomly assigned to five cotton specimens.  After treatment, the 
+strength of each specimen was measured.
+-----------------------------------------------------------------------
+
+DAY        1, 2 or 3
+TREAT      the chemical treatment (1 through 5)
+STRENGTH   strength of the cotton specimen (arbitrary units)
+

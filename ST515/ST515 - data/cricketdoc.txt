@@ -1,0 +1,9 @@
+
+CRICKET - data on the rate of cricket chirping in a backyard in northwest
+Corvallis, collected at dusk.
+
+   MONTH, DAY, YEAR	of data collection
+   JULIAN		Julian day, with 1 equal to January 1 of that year
+   TEMP			temperature in degrees Fahrenheit
+   RATE			number of chirps in one minute
+

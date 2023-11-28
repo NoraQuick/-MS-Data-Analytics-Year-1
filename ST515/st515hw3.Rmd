@@ -1,0 +1,140 @@
+---
+title: "ST515-HW3"
+author: Nora Quick
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(Sleuth3)
+```
+
+1. Consider the gravid data set.
+
+```{r}
+df = read.table("gravid.txt", header=TRUE);
+str(df);
+head(df);
+
+attach(df);
+```
+
+   (a) Draw a scatterplot of number of embryos (nembr) vs. carapace length (size), labeling the points with the number of the cohort (1 or 2) to which they belong.
+   
+```{r}
+## Plot the data: scatter plot
+plot(size, nembr, type="n", xlab="Size (mm)", ylab="Number of embryos");
+points(size[cohort==1], nembr[cohort==1], pch="1")
+points(size[cohort==2], nembr[cohort==2], pch="2")
+```
+
+   (b1) Create a variable, cohort1, that takes on the value one for females in cohort 1, and the value zero for females in cohort 2:
+   
+```{r}
+cohort1 <- as.numeric(cohort==1);
+```
+
+   (b2) For each of the models below, show the regression equation obtained by fitting the model (e.g., nembr =  1.23  +  4.56 cohort1  +  7.89 size), and report the error (residual) sum of squares and error degrees of freedom for the model.
+
+```{r}
+# MODEL 1: number of embryos as a function of cohort only
+m1 = lm(nembr ~ cohort1)
+```
+
+```{r}
+# Output of the fit
+summary(m1)
+anova(m1)
+```
+
+The residual sum of squares is 1979.13.
+The residual degrees of freedom is 93.
+
+```{r}
+# MODEL 2: number of embryos as a function of cohort and mysid size, main effects only 
+m2 = lm(nembr ~ cohort1 + size)
+```
+ 
+```{r}
+# Output of the fit
+summary(m2)
+anova(m2)
+```
+ 
+The residual sum of squares is 1563.31.
+The residual degrees of freedom is 92.
+ 
+```{r}
+# MODEL 3: number of embryos as a function of cohort, mysid size, and an interaction between cohort and mysid size
+
+# cohort2 <- as.numeric(cohort==2)
+
+m3 = lm(nembr ~ cohort1 * size)
+```
+
+```{r}
+# Output of the fit
+summary(m3)
+anova(m3)
+```
+ 
+The residual sum of squares is 1374.56.
+The residual degrees of freedom is 91.
+  
+   (c) Use the information from above to select what you consider to be the “best” model of number of embryos as a function of cohort and/or size. Explain your choice. **For this problem, do the model comparisons “by hand” using the formula on slides 20–22 of notes 3.1 “Analysis of Covariance”.**
+
+```{r}
+# Model 3 & Model 2
+x = ((1563.31 - 1374.56) / (92 - 91)) / (1374.56 / 91)
+pf(x, 1, 91, lower.tail = FALSE)
+```
+
+From this outcome it appears that Model 3 is better than Model 2 so we will keep Model 3 and compare it to Model 1.
+
+```{r}
+y = ((1979.13 - 1374.56) / (93 - 91)) / (1374.56 / 91)
+pf(y, 2, 91, lower.tail = FALSE)
+```
+   
+From this outcome it appears that Model 3 is still the "best" model of number of embryos as a function of cohort and/or size. I would conclude this both because of the "by hand" math this question asked for and because it has an interaction term that gives us more information on the number of embryos and size.
+   
+   (d) Test the hypothesis that cohort does not influence number of embryos in any way—either as a main effect, or as a main effect plus interaction—given that mysid size is in the model. This might involve fitting a model(s) other than the three indicated above. Show your R code, and interpret your result. (For this part, you can use the R function “anova” for model comaprisons.)
+   
+```{r}
+# Model 4
+m4 = lm(nembr ~ cohort1 + cohort1:size)
+
+# Output of cohort 1 as the main effect plus interaction
+summary(m4)
+anova(m4)
+```
+
+We are testing the hypothesis that cohort does not influence the number of embryos as a main effect or a main effect plus interaction. To accept or reject this I want to look at all four models' p-values.
+
+From Model 4 we can see that there the ANOVA test produces a very small p-value for cohort1 but the interaction is relatively large. This is confusing so I went and checked the p-values of the other models. For all cohort has a relatively small p-value indicating that there is evidence that cohort does influence the number of embryos. 
+
+   (e) Use the regression output from Model 3 above to write down equations to predict number of embryos from mysid size, for cohort 1 and for cohort 2. On the scatterplot you made in (a), draw in the lines corresponding to these predictive equations, and indicate which line is for which cohort.
+   
+```{r}
+coef(m3)
+
+## Plot the data: scatter plot
+plot(size, nembr, type="n", xlab="Size (mm)", ylab="Number of embryos");
+points(size[cohort==1], nembr[cohort==1], pch="1")
+points(size[cohort==2], nembr[cohort==2], pch="2")
+
+# Model 1
+a1 = -26.66 + 37.17
+b1 = 10.68 + (-8.74)
+abline(a1, b1, col="magenta")
+   
+# Model 2
+a2 = -26.66 + (-37.17)
+b2 = 10 + 8.74
+abline(a2, b2, col="magenta")
+```
+
+   (f) After doing all this work, how would you answer the question posed at the beginning of the problem (“Does the number of embryos carried per female differ between cohorts 1 and 2?”)?
+   
+After doing the plotting work in part (e) I conclude that the number of embryos carried per female depends on the cohort they are in.

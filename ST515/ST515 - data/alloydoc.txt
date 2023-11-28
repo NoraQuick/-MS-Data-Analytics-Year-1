@@ -1,0 +1,7 @@
+
+ALLOY - Three formulations of an ALLOY were prepared with four separate
+CASTINGs for each formulation (i.e., there were 12 distinct castings, so
+that CASTING is nested within ALLOY).  Two bars from each casting were 
+tested for tensile STRENGTH.  Assume that ALLOY and CASTING are both 
+random effects.
+

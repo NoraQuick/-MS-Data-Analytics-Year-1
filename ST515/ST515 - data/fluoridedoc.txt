@@ -1,0 +1,15 @@
+
+FLUORIDE - results of an experiment by dentists at the Mayo Clinic studying
+the effect of different orthodontic cements on fluoride loss.  Ten human
+teeth were assigned to each of six cement types in a completely randomized
+design, i.e., each tooth received a single cement type.  The protocol was:
+fluoride measured in small biopsy --> band cemented to tooth --> tooth
+bathed in synthetic saliva for three weeks --> band removed and fluoride
+measured in another biopsy.
+ 
+   cement       type of orthodontic cement used
+                1 = ENDUR, 2 = ENDUR+F, 3 = FL-EVER, 4 = FL-BOND,
+                5 = GLASS, 6 = PHASE2
+   uptake       estimated change in fluoride concentration (ppm), final
+                minus initial
+

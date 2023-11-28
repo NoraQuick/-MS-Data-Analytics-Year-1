@@ -1,0 +1,11 @@
+
+ORANGE - Data from an irrigation experiment conducted in a Valencia orange
+grove.  Six irrigation treatments were used in eight blocks of trees.
+The treatments were randomly assigned to six plots within each block of
+trees.  The response is the weight in pounds of harvested fruit from each
+plot.
+
+   METHOD:  1 = trickle           4 = sprinkler
+            2 = basin             5 = sprinkler + spray
+            3 = spray             6 = flood
+

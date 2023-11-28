@@ -1,0 +1,261 @@
+---
+title: "ST517-HW3"
+author: Nora Quick
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(car)
+library(tidyverse)
+library(rstatix)
+```
+
+1. This question uses a dataset from the faraway package to perform a Lack of Fit test on a model we will fit. Use this code to load the dataset. You may need to install the ‘faraway‘ package if you don’t already have it.
+
+
+```{r}
+chem = read.table("data/chem.txt", header=TRUE);
+str(chem);
+head(chem);
+attach(chem);
+
+summary(chem)
+```
+
+```{r}
+boxplot(yield ~ base + alcohol, data = chem, main="Boxplots of the yeild to the sixe treatments")
+```
+
+```{r}
+alc = factor(alcohol); 
+b = factor(base);
+
+m = lm(yield ~ alc * b);
+m
+```
+
+```{r}
+a = anova(m);
+a
+
+MSE = a$`Mean Sq`[4]
+MSE
+
+mu.hat = tapply(yield, list(alc, b), "mean")
+mu.hat
+
+C.hat = (mu.hat[2,2] - mu.hat[1,2]) - (mu.hat[2,1] - mu.hat[1,1]);
+SE.Chat = sqrt(MSE * (1/3+1/3));
+alpha = 0.05;
+t.cr = qt(1-alpha/2, df=2);
+CI = C.hat + c(-1,1) * t.cr * SE.Chat;
+CI
+```
+```{r}
+qqnorm(m$resid); qqline(m$resid)
+
+m1 <- leveneTest(weight ~ group, data = PlantGrowth)
+m1
+```
+
+
+
+```{r}
+mm = lm(yield ~ b - alc);
+mm
+
+anova(mm)
+```
+
+```{r}
+confint(m, level = 0.95)
+```
+
+
+
+```{r}
+lettuce = read.table("lettuce.txt", header=TRUE);
+str(lettuce);
+lettuce;
+attach(lettuce);
+## Boxplot
+boxplot(heads ~ treat, main="Boxplots of the numbers of lettuce heads havested", 
+xlab="treatment");
+```
+
+
+
+```{r}
+day <- c(1:31)
+steps <- c(5000, 4000, 6000, 6000, 8000, 10000, 10000, 5000, 6000, 10000, 11000, 11000, 11000, 9000, 6000, 4000, 7000, 10000, 10000, 12000, 7000, 6000, 5000, 8000, 11000, 10000, 12000, 6000, 4000, 4000, 6000)
+
+cols <- c("red", "green")[(steps >= 10000) + 1]
+
+barplot(steps, col = cols, main = "Jan Steps", xlab = "Days of the Month", ylab = "Number of Steps", names.arg = c(1:31), legend = TRUE)
+```
+
+```{r}
+plant = read.table("data/plant.txt", header=TRUE);
+str(plant);
+head(plant);
+attach(plant);
+
+#temp.f = factor(temp, levels = c(0, 1), labels=c("13 C", "18 C"));
+#data.frame(temp, temp.f)
+#co2.f = factor(co2, levels = c(0, 1), labels = c("ambient", "high"));
+#data.frame(co2, co2.f)
+
+
+#boxplot(plant.wt ~ co2 * temp, data = plant, main="Boxplots of the plant weight to the CO2 levels")
+
+m4 <- lm(plant.wt ~ co2 + temp)
+anova(m4)
+```
+
+
+```{r}
+cotton = read.table("data/cotton.txt", header=TRUE);
+str(cotton);
+head(cotton);
+```
+
+
+```{r}
+strength = cotton$strength
+treat = cotton$treat
+day = cotton$day
+
+treat.f = factor(treat, levels = c(1,2,3,4,5))
+day.f = factor(day, levels = c(1,2,3))
+
+m = lm(strength ~ treat.f, data = cotton)
+#m
+
+m2 = lm(strength ~ day, data = cotton)
+#m2
+
+m3 = lm(strength ~ treat * day, data = cotton)
+#summary(m3)
+
+m4 = lm(strength ~ treat.f, data = cotton)
+summary(m4)
+
+anova(m4)
+```
+
+
+```{r}
+plot(treat, strength, xlab = "treat", ylab = "strength", pch=as.character(day))
+
+boxplot(strength ~ day, xlab = "day", ylab = "strength")
+```
+
+
+```{r}
+orange = read.table("data/orange.txt", header=TRUE);
+str(orange);
+head(orange);
+
+method = orange$method
+block = orange$block
+weight = orange$weight
+```
+
+
+```{r}
+boxplot(weight ~ method, xlab = "method", ylab = "weight")
+boxplot(weight ~ block, xlab = "block", ylab = "weight")
+```
+
+```{r}
+m = lm(weight ~ method + block, data = orange)
+summary(m)
+anova(m)
+```
+
+```{r}
+friedman.test(weight, groups = method, blocks = block)
+```
+
+
+```{r}
+build = read.table("data/build.txt", header=TRUE);
+str(build);
+head(build);
+
+period = build$period
+tech = build$tech
+method = build$method
+minutes = build$minutes
+```
+
+```{r}
+plot(period ~ tech + method + minutes)
+```
+
+```{r}
+m0 = lm(period ~ tech + method);
+plot(residuals(m0) ~ minutes)
+```
+
+```{r}
+m = lm(period ~ tech + method + minutes)
+anova(m)
+```
+
+
+```{r}
+phyto = read.table("data/phyto.txt", header=TRUE);
+str(phyto);
+head(phyto);
+attach(phyto);
+```
+
+```{r}
+plotchars = paste(fish, nutr);
+plot(0, 0, type="n", xlab="Study", ylab="Log(biomass)",
+    xlim=c(0,12), ylim=range(log(biomass)));
+text(study, log(biomass), plotchars, cex=1.2);
+```
+
+```{r}
+study.f = factor(study, levels=c(11,1:10))
+```
+
+```{r}
+m = lm(log(biomass) ~ study.f + fish + nutr)
+anova(m)
+```
+
+```{r}
+m1 = lm(log(biomass) ~ fish)
+summary(m1)
+m2 = lm(log(biomass) ~ nutr)
+summary(m2)
+
+#newdata1 = data.frame(fish = 4)
+#newdata2 = data.frame(nutr = 4)
+
+#predict(m1, newdata1, interval = "confidence")
+#predict(m2, newdata2, interval = "confidence")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

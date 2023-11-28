@@ -1,0 +1,11 @@
+
+MHAULS - numbers of mysids caught in epibenthic dredge hauls in Lake
+         Washington, Seattle.  Each record represents a single haul.
+----------------------------------------------------------------------
+
+   station      sampling location
+                   (1 = Madison Park, 2 = Rainier Beach,
+                    3 = Cozy Cove, 4 = North Point)
+   haul         sequence of haul (there were 5 or 6 hauls per station)
+   nmys         number of mysids in haul
+

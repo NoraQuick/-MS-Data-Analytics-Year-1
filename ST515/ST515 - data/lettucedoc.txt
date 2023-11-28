@@ -1,0 +1,9 @@
+
+LETTUCE - Data on the effect of different amounts of ammonium nitrate on
+lettuce production.  The experiment was conducted in a completely
+randomized design, using a 4x5 rectangular array of plots in a field.
+------------------------------------------------------------------------
+
+TREAT    treatment (pounds of nitrogen per acre)
+HEADS    number of heads of lettuce harvested from the plot
+

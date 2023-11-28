@@ -1,0 +1,11 @@
+
+BP0 - a small subset of the data from a clinical trial of an 
+antihypertensive (blood-pressure-lowering) drug, for use in class
+illustrations.  Each line represents a person who was randomly
+assigned to one of three dose groups and treated for six weeks.
+-----------------------------------------------------------------
+
+DOSE	dose of the drug, in arbitrary units (0 = placebo)
+CHANGE	change in diastolic blood pressure (final minus initial),
+        in mm Hg
+

@@ -1,0 +1,111 @@
+---
+title: "Homework Set 1"
+data: "`r Sys.Date()`"
+output: word_document
+---
+
+The goal of this first homework set is to help you
+
+* set up R and R Studio, 
+* set up the data collection to be used for this class, 
+* run simple computations and simulations using R, and 
+* learn to use R Markdown to create a word document with embedded R code and output.
+
+## Task 1. Install R and R studio
+Install `R` and `R Studio`. Follow instructions at
+
+https://www.r-project.org/
+
+and
+
+https://www.rstudio.com/
+
+## Task 2. Download the class data set and load one data set into R
+1. Download the class data set (data.zip). Unzip it. Keep the folder name as `data`.
+2. Create a folder `R` so that the folders `R` and `data` are at the same level.
+3. Save this Rmd file into the `R` folder and open the Rmd file from the `R`
+folder: this should automatically launch R Studio.
+
+## Task 3. Compute normal probabilities.
+1. Suppose $Z \sim N(0, 1)$ (standard normal, use R function `pnorm` to compute 
+* $Pr(Z>2)$
+* $Pr(-1 < Z \leq 1)$
+* $Pr(0 < Z < 3)$
+
+```{r}
+## To compute probability Pr(Z>2)
+1 - pnorm(2)
+```
+
+```{r}
+## To compute probability Pr(-1<Z\leq1)
+(1 - pnorm(1)) - pnorm(-1)
+```
+
+```{r}
+## To compute probability Pr(0<Z<3)
+pnorm(3) - pnorm(0)
+```
+
+
+2. Suppose $X \sim N(\mu=2, \sigma^2=5)$, use R function `pnorm` to compute
+* $Pr(X > 5)$
+* $Pr(X < 0)$
+* $Pr(0 < X \leq 2)$
+
+```{r}
+## To compute Pr(X<0)
+pnorm(0, mean = 2, sd = sqrt(5))
+```
+
+```{r}
+## To compute Pr(X>5)
+pnorm(5, mean = 2, sd = sqrt(5), lower.tail = FALSE)
+```
+
+```{r}
+## To compute Pr(0<Z<\leq2)
+pnorm(2, mean = 2, sd = sqrt(5)) - pnorm(0, mean = 2, sd = sqrt(5))
+```
+
+
+## Task 4. Simulation for Central Limit Theorem
+
+```{r}
+n_sim = 10000;
+
+mean = 0.5;
+sd = 0.5;
+
+for (n in c(5, 10, 50, 100, 500, 1000)) {
+  m = numeric(n_sim); 
+  z = numeric(n_sim); 
+  
+  for (i in 1:n_sim) {
+    
+    y = rbinom(n, 1, p=0.5);
+
+    m[i] = mean(y);
+
+    z[i] = sqrt(n)* (m[i] - mean)/sd
+    
+    ## Or use the sample standard deviation
+    ## z[i] = sqrt(n)* (mean(y) - mu)/sd(y);
+  }
+
+  hist(z, probability =TRUE, main=sprintf("n= %d", n), nclass=30);
+
+  x = seq(-3, 3, length=100);
+  lines(x, dnorm(x));
+
+  plot(ecdf(z), col="magenta", main="Emperical CDF of z (magenta) to the normal cdf (cyan)");
+  lines(x, pnorm(x), type="l", col="darkcyan");
+}
+```
+
+## Task 5. Knit the R markdown file
+
+Once all your R codes work correctly, "Knit" the markdown file to create the
+word document. Verify that you have completed all the problems and then turn in
+the completed word document through Canvas.
+

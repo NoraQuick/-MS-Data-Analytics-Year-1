@@ -1,0 +1,9 @@
+
+CHEM - A chemical production process consists of a first reaction with
+an ALCOHOL and a second reaction with a BASE.  A 3x2 factorial experiment
+was conducted with four replicate reactions for each of the six treatment
+combinations.  The response is percent yield.
+
+Note that ALCOHOL and BASE are both categorical variables, i.e., they 
+are not ordered in any way.
+

@@ -1,0 +1,10 @@
+
+GRAVID - numbers of embryos carried by gravid mysids in Lake Washington,
+from samples taken in successive years (at roughly the same time of year).
+Each record represents a gravid female.
+-------------------------------------------------------------------------
+
+   cohort       year in which the mysid was collected (1 or 2)
+   size         dorsal carapace length of mysid, in mm
+   nembr        number of embryos in intact brood pouch
+

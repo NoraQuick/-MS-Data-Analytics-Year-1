@@ -1,0 +1,11 @@
+
+BUILD - Study of time efficiency of four construction methods of an 
+electronic component.
+
+Four technicians (TECH) were selected for the study.  The experimenter
+used a Latin square design with columns as `technician' and rows as
+`time period' (PERIOD).  The construction methods (METHOD) were
+randomized to the technicians and time periods according to the Latin
+square arrangement.  The response (MINUTES) is the construction time
+for the component.
+

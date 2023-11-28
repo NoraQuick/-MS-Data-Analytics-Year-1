@@ -1,0 +1,14 @@
+
+ANODE - a two-factor factorial experiment on the effects of TEMPERATURE
+and POSITION in a furnace on carbon anode DENSITY.
+
+There were three furnaces, each kept at a particular temperature (the
+fixed effect of interest).  In each furnace, there were two positions
+(consider this to be a random effect, crossed with temperature).
+Eighteen anodes (the experimental units) were randomly assigned to
+the six temperature-position combinations, three anodes (replicates) 
+per combination.
+
+The response of interest is the density of an anode after a period
+of incubation in the furnace.
+

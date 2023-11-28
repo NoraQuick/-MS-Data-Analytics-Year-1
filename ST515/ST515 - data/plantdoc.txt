@@ -1,0 +1,31 @@
+
+PLANT - from a study of the effects of CO2 and temperature on plant
+growth.  Twelve environmental chambers were used, with each chamber
+receiving a particular combination of CO2 concentration and temperature.
+In each chamber, twelve plants of each of three species were grown over
+a 127-day period.  The data from the twelve plants of a particular 
+species in a particular environmental chamber were averaged to obtain a 
+single summary of the growth of that species in that environmental 
+chamber.  The variables are:
+
+chamber 	1-12
+
+co2		CO2 treatment: 0 = ambient (380 ppm)
+	                       1 = high (580 ppm), 
+
+temp		root temperature: 0 = 13 deg C, 1 = 18 deg C
+
+species 	0 = Squirreltail, C3 grass
+    	  	1 = Wyoming big sagebrush, C3 shrub
+		2 = Thurber's needlegrass, C3 grass
+
+plant.wt 	total plant weight
+
+shoot.wt 	shoot weight (leaves + stems)
+
+root.wt 	root weight
+
+lf.area 	leaf area
+
+rs.ratio	root:shoot ratio (root weight / shoot weight)
+

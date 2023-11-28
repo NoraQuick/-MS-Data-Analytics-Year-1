@@ -1,0 +1,6 @@
+
+CLASS - data from Neter, Wasserman and Kutner, p. 1122 (nested design).  
+Average test SCOREs in classes taught by six different INSTRUCTors at 
+three different SCHOOLs.  Instructor is nested within school, and class 
+is nested within instructor.
+
