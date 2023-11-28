@@ -1,0 +1,125 @@
+---
+title: "ST515-HW4"
+author: "Nora Quick"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+4.1:
+
+   (a) Describe how you would design and execute an experiment to test the effects of CO2 
+concentration and temperature on plant growth.
+
+There are 12 seedling for each of the 12 chambers so my first step would be to randomize both of those. I would start with assigning the 144 randomly into 12 groups. Next, I would assign the chamber that each of the 12 seedlings randomly. 
+
+Following this I would set incrementily increasing values for both CO2 levels and temperature. For example, temp: 32, 62, 92 and CO2: 20, 40, 60, 80.
+
+   (b) Identify the statistical procedure you would use to analyze the data, and provide an 
+ANOVA table that shows the sources of variation and associated degrees of freedom.
+
+Personally, I would use mixed a mixed effect model. This is because I would set both CO2 levels and temperature as fixed variables. I would then randomize the chambers in which the CO2 levels and temeratures are assigned. 
+
+4.2:
+
+   (a) Draw a boxplot of yield for the six treatment combinations.
+
+![4.2.1](1.PNG) 
+
+   (b) Fit the two-way ANOVA model, including the interaction term. Show the output, and 
+interpret the results.
+
+![4.2.2](2.PNG) 
+
+Neither of the interaction terms are significant on their own. The chemical reaction is only significant with the ineraction of the two variables together. 
+
+   (c) Create a table of the cell means (i.e., the mean yields for each of the six treatment
+combinations).
+
+![4.2.3](3.PNG)
+
+   (d) Calculate the simple effects of base (2 minus 1) for the three levels of the alcohol 
+factor. Does there appear to be an interaction between base and alcohol? Explain.
+
+![4.2.4](4.PNG)
+
+It appears that there is a significant interaction between base and alcohol. This is because of the large p-value indicating that there is no significance between the yeild and base on it's own. 
+
+   (e) What if anything does this interval tell you about the interaction between base and 
+alcohol?
+
+![4.2.5](5.PNG)
+
+From this interval the interaction between the two is significant and that together they range from having a negative yield to a a good positive yeild. 
+
+   (f) Using the residuals from the two-way ANOVA: (i) draw and interpret a plot to assess 
+the normality assumption; (ii) draw and interpret a plot to assess the constant-
+variance assumption; and (iii) perform and interpret the results of Levene’s test.
+
+![4.2.6](6.PNG)
+
+4.3:
+
+   (a) Draw a graph of the plant weights in the four combinations of CO2 and temperature, 
+and describe the patterns you see.
+
+![4.3.1](7.PNG)
+
+There is an interesting pattern where all the mean ranges overlap, however, the meam within each sample varies wildly. The lower the temperature the lower the overall mean.
+
+   (b)Perform an analysis of variance of plant weight, using a model that includes co2, temp, and their interaction. Include (i) a summary of the mean response in the different 
+treatment combinations; (ii) the ANOVA table; and (iii) an interpretation of your 
+results.
+
+![4.3.2](8.PNG)
+
+![4.3.3](9.PNG)
+
+From the summary and the ANOVA table we can see that we can approve the null hypothesis that both co2 and temp have the same effect on the plant weight.
+
+   (c) Use Levene’s test to evaluate the constant-variance assumption of your ANOVA model. 
+Is the result consistent with what you see in your graph from part (a)? Explain.
+
+(Could not get leneve's working)
+
+   (d) Since the interaction term is nonsignificant, drop it and fit a model with just the main effects of CO2 and temperature. Present both the ANOVA and regression output, and 
+explain what they suggest about the effects of CO2 and temperature on plant weight.
+
+![4.3.4](13.PNG)
+
+Without an interaction there is no siginifant data from co2 or temperature. 
+
+   (e) Using the ANOVA output from the two models you fit above, do an extra-sum- of-
+squares test of the null hypothesis that there is no interactive effect of CO2 and 
+temperature on plant growth. That is, extract the needed sums of squares and degrees 
+of freedom, and plug them in to the general formula for the extra-sum-of-squares F- 
+test. Show how to obtain the P-value, and verify that it is the same as that for the 
+interaction term in the full model from part (b).
+
+(Could not get leneve's working)
+
+4.4:
+
+   (a) Prepare a graphical summary of anode density in the six treatment combinations. 
+Comment on the apparent main effects of position and temperature, and the 
+interaction between them.
+
+![4.4.1](10.PNG)
+
+   (b) Perform an appropriate analysis of variance on these data, modeling both position and temperature as categorical variables. Show the ANOVA table; perform F-tests for both main effects and their interaction; and interpret your results. Do not drop the interaction term, even though it is nonsignificant.
+
+![4.4.2](11.PNG)
+
+   (c) A colleague suggests that, since temperature is measured on a continuous scale, it 
+would make more sense to model temperature as a quantitative variable, in an ANCOVA-like approach, instead of as a qualitative (categorical) variable. Eager to please, you proceed as follows.
+
+      (i) Fit a model of density as a function of the quantitative temperature variable and a factor for position, without the interaction term (since it is nonsignificant). Hand in the regression output.
+      
+![4.4.3](12.PNG)
+      
+      (ii)Interpret the magnitude and the statistical significance of the regression coefficent for temperature. How does your conclusion compare to what you inferred from the earlier model that used a categorical version of temperature? Do you agree with your colleage that temperature should be treated as a quantitative predictor? Explain.
+
+In this we find that temperature on it's own still is not significant. This conclusion compares to what we inferred in the earlier model as well. On it's own it's p-value indicates that it isn't significant in either. 
+
+Yes, I agree that it should be a quantitative predictor because temperature is always a fixed numerical value. It quite literally provides a quantity of something (in this case it is temperature).
+

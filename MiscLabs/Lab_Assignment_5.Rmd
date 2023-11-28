@@ -1,0 +1,51 @@
+---
+title: "Lab Assignment 5"
+author: "Nora Quick"
+output: pdf_document
+---
+
+```{r,warning=FALSE,message=FALSE}
+library(arm)
+library(Sleuth3)
+library(tidyverse)
+library(vcdExtra)
+library(magrittr)
+```
+
+```{r}
+marriage <- expand.grid(
+  opinion = factor(c("Agree", "Neutral", "Disagree"), levels = c("Agree", "Neutral", "Disagree")),
+  relig = factor(c("Fundamentalist", "Moderate", "Liberal"), c("Liberal", "Moderate", "Fundamentalist")),
+  educ = factor(c("High school or less", "At least some college"), c("High school or less", "At least some college"))) 
+marriage$Freq <- c(  6,2,10,8,3,9,11,5,6,4,2,11,21,3,5,22,4,1)
+
+marriage_tab <- xtabs(data = marriage, Freq ~ educ + relig + opinion)
+```
+
+## Question 1: Fit a model to the gay marriage data that includes all two-way interactions. What do you conclude from this model? Be specific and try to address questions having to do with the association among the three variables.
+```{r}
+mod_g_mar <- glm(data = marriage_tab, Freq ~ relig + educ + opinion + (relig * educ) + (relig * opinion) + (educ * opinion), family = poisson)
+summary(mod_g_mar)
+```
+
+The main conclusion about this data that I can make is that Fundamentalists have significant evidence that at any level of education they disagree with gay marriage. I conclude this in several different ways with the most significant data being religFundamentalist:opinionDisagree (p-value = 6e-05). But we can also see that religFundamentalist and opinionDisagree show signs of significance. We can conclude that it's any level of education because all levels are included due to the association with the other two variables in the formula. 
+
+
+## Question 2: Fit a model that includes all two-way and the three-way interactions. Is there anything problematic about this model? Please explain.
+```{r}
+mod_two_three <- glm(data = marriage_tab, Freq ~ relig + educ + opinion + (relig * educ) + (relig * opinion) + (educ * opinion) + (relig * educ * opinion), family = poisson)
+summary(mod_two_three)
+```
+
+```{r}
+#mod_t_t <- glm(data = marriage_tab, Freq ~ relig + educ + opinion + (relig * educ) + (relig * opinion) + (educ * opinion) + (relig * educ * opinion), family = quasipoisson)
+#summary(mod_t_t)
+```
+
+After running both poisson and quasipoisson I chose to go with poisson as it gave better output of the data. 
+
+Yes, there is something problamatc with this model. There are no deviance residuals looking at the resudual deviance on degrees of freedom there is an issue with calculating over-dispersion. Due to issues with both of those I would conclude that the data is over-dispersed. 
+
+
+
+

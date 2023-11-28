@@ -1,0 +1,39 @@
+---
+title: "Alternative Commute Plot"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+```
+
+```{r}
+commute <- read_rds("http://data.cwick.co.nz/commute.rds")
+
+states <- c("or", "ak", "ca", "wa", "id", "nv")
+commute_nw <- filter(commute, state %in% states)
+
+ggplot(data = commute_nw, aes(x = prop, y = reorder(transport_type, prop), fill = state_name)) +
+  geom_bar(stat = "identity", position = position_dodge(), alpha = 0.75)+
+  labs(x = "\n Proportion", y = "Transportation Type\n", title = "\n Commute Type by State \n") +
+  theme(plot.title = element_text(hjust = 0.5), 
+        axis.title.x = element_text(face="bold", colour="black", size = 12),
+        axis.title.y = element_text(face="bold", colour="black", size = 12),
+        legend.title = element_text(face="bold", size = 10)) +
+scale_fill_manual(values = c("#CC79A7", "#E69F00", "#56B4E9", "#009E73",
+          "#F0E442", "#000000"))
+```
+
+```{r}
+bike = subset(commute_nw, transport_type == 'Bicycle')
+
+ggplot(data = bike, mapping = aes(y = transport_type, x = prop, fill = state_name ))+
+  geom_col(position = position_dodge2(), ylim = '')+
+  theme(axis.text.y=element_blank(), axis.ticks.y=element_blank (), plot.title = element_text(hjust = 0.5))+
+  guides(fill = guide_legend(title = "State"))+
+  labs(x = "\n Proportion", y = '', title = "\n Bicycle \n") +
+    scale_fill_manual(values = c("#CC79A7", "#E69F00", "#56B4E9", "#009E73",
+          "#F0E442", "#000000"))
+```
+
+

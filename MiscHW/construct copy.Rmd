@@ -1,0 +1,46 @@
+---
+title: "Construct"
+author: Nora Quick
+output: pdf_document
+---
+
+```{r}
+library(ggplot2)
+library(Lahman)
+```
+
+```{r}
+library(babynames)
+#babynames
+```
+
+```{r}
+y1 = subset(babynames, year == 1880)
+y2 = subset(babynames, year == 1980)
+
+n1 = subset(babynames, name == "Mary")
+n2 = subset(babynames, name == "Joe")
+
+s1 = subset(babynames, sex == "F")
+s2 = subset(babynames, sex == "M")
+```
+
+```{r}
+#Q1
+
+ggplot(y1, aes(x = "", y = sex, fill = sex)) +
+  geom_col() +
+  coord_polar(theta = "y")
+
+ggplot(y2, aes(x = "", y = sex, fill = sex)) +
+  geom_col() +
+  coord_polar(theta = "y")
+
+#ggplot(y1, aes(x = "", y = sex, fill = sex)) +
+#  geom_col(color = "black") +
+#  coord_polar(theta = "y")
+
+#ggplot(y2, aes(x = "", y = sex, fill = sex)) +
+#  geom_col(color = "black") +
+#  coord_polar(theta = "y")
+```

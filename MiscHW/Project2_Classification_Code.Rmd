@@ -1,0 +1,150 @@
+---
+title: "Project#2_Interim"
+author: "Tyler Busby"
+date: "5/10/2022"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readxl)
+library(ggplot2)
+library(tree)
+library(rpart)
+library(xgboost)
+#library(caret)
+library(mvtnorm)
+#library(caret)
+library(neuralnet)
+
+
+full <- read.csv("train.csv")
+
+## 75% of the sample size
+smp_size <- floor(0.75 * nrow(full))
+
+## set the seed to make your partition reproducible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(full)), size = smp_size)
+
+train <- full[train_ind, ]
+test <- full[-train_ind, ]
+
+
+#taking out variables that are duplicates or not wanted focusing on car and ind variables
+
+train = subset(train, select = -c(ps_ind_02_cat,ps_ind_04_cat,ps_ind_05_cat,ps_ind_06_bin,ps_ind_08_bin,ps_ind_09_bin,ps_ind_10_bin,ps_ind_11_bin,ps_ind_12_bin,ps_ind_13_bin,ps_ind_16_bin,ps_ind_17_bin,ps_ind_18_bin,ps_car_01_cat,ps_car_10_cat,ps_car_11_cat,ps_calc_01,ps_calc_02,ps_calc_03,ps_calc_04,ps_calc_05,ps_calc_06,ps_calc_07,ps_calc_08,ps_calc_09,ps_calc_18_bin,ps_calc_19_bin,ps_calc_20_bin) )
+
+test = subset(test, select = -c(ps_ind_02_cat,ps_ind_04_cat,ps_ind_05_cat,ps_ind_06_bin,ps_ind_08_bin,ps_ind_09_bin,ps_ind_10_bin,ps_ind_11_bin,ps_ind_12_bin,ps_ind_13_bin,ps_ind_16_bin,ps_ind_17_bin,ps_ind_18_bin,ps_car_01_cat,ps_car_10_cat,ps_car_11_cat,ps_calc_01,ps_calc_02,ps_calc_03,ps_calc_04,ps_calc_05,ps_calc_06,ps_calc_07,ps_calc_08,ps_calc_09,ps_calc_18_bin,ps_calc_19_bin,ps_calc_20_bin) )
+
+
+```
+
+
+
+
+```{r}
+
+# Classification Tree Model
+rpart = rpart(as.factor(target)~ ps_car_15 +ps_car_11 + ps_ind_07_bin + ps_car_12 +ps_ind_03+ps_car_13+ps_car_14+ps_reg_03+ps_reg_02+ps_reg_01,method = "class",control =rpart.control(minsplit =1,minbucket=1, cp=0), data = train)
+
+# display the results
+printcp(rpart) 
+# visualize cross-validation results
+plotcp(rpart) 
+# detailed summary of splits
+#summary(rpart, pretty = T) 
+# plot tree
+plot(rpart, uniform=TRUE,
+     main="Classification Tree")
+
+
+pfit<- prune(rpart, 
+             cp = rpart$cptable[which.min(rpart$cptable[,"xerror"]),"CP"])
+
+#plot(pfit, uniform=TRUE,
+#     main="Pruned Classification Tree")
+
+res = predict(rpart, train)
+
+res = ifelse(res[, 1] > 0.5,1,0)
+
+table(train$target, res)
+#train prediction look OK
+
+res1 = predict(rpart, test)
+
+res1 = ifelse(res1[,1] > 0.5,1, 0)
+
+table(test$target, res1)
+#test predictions are not very good, basically the model is overfit
+
+
+
+```
+
+```{r}
+
+#NERUAL NETWORK
+
+nn.sim <- neuralnet(as.factor(target)~., data=train, hidden=2,err.fct = "sse",  linear.output = FALSE)
+
+nn.sim$result.matrix
+
+nn.sim$net.result[[1]]
+
+
+nn1 = ifelse(nn.sim$net.result[[1]]>.5,1,0)
+
+call_error = mean(train$target != nn1)
+
+#call error is 50% basically no subject was predicted as a 1
+
+
+
+```
+
+```{r}
+
+
+train.data = as.matrix(train[,3:31])
+train.labels = as.numeric(train[,2])
+
+train.data = as.matrix(train[,3:31])
+train.labels = as.numeric(train[,2])
+
+xgb.sim1 = xgboost(data = train.data, label = train.labels, 
+                  max.depth = 6, eta = 1, nrounds = 100,
+                  objective = "binary:logistic", eval_metric = "logloss")
+
+# Early Stopping using cross-validation
+xgb.sim.cv = xgb.cv(data = train.data, label = train.labels, 
+                    max.depth = 6, eta = 1, nrounds = 100,
+                    nfold = 5, early_stopping_rounds = 5,
+                    objective = "binary:logistic", eval_metric = "logloss")
+sel_rounds = xgb.sim.cv$best_iteration
+
+xgb.sim2 = xgboost(data = train.data, label = train.labels, 
+                  max.depth = 6, eta = 1, nrounds = sel_rounds,
+                  objective = "binary:logistic", eval_metric = "logloss")
+# Fitted response labels
+pred1 = predict(xgb.sim1, train.data)
+pred.xgb.sim1 = ifelse(pred1 > 0.5, 1,0)
+
+pred2 = predict(xgb.sim2, train.data)
+pred.xgb.sim2 = ifelse(pred2 > 0.5, 1,0)
+
+
+
+# Misclassification errors in the training data
+table(train$target, pred.xgb.sim1)
+
+table(train$target, pred.xgb.sim2)
+
+#essentially no predictions of a 1
+
+
+```
+
+

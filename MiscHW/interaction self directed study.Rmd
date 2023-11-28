@@ -1,0 +1,45 @@
+---
+title: "Animation/Interaction Self Directed Study"
+author: Nora Quick
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(plotly)
+```
+
+```{r}
+circ <- read.csv("circuits.csv")
+
+head(circ)
+
+circ$name <- gsub("-", " ", circ$name)
+circ$location <- gsub("-", " ", circ$location)
+circ$location <- gsub("\xcc_", "", circ$location)
+
+head(circ)
+
+Sys.setlocale('LC_CTYPE','C')
+
+g <- list(showland = TRUE,
+  landcolor = toRGB("#e5ecf6"))
+
+fig <- plot_geo(circ, lat = ~lat, lon = ~lng)
+
+fig <- fig %>% add_markers(
+  text = ~paste(name, location, country, sep = "<br />"),
+  color = ~country, symbol = I("circle"), size = I(8), hoverinfo = "text"
+)
+
+fig <- fig %>% layout(
+    title = 'F1 Circuits of the World<br />(1970-2017)', geo = g
+)
+
+fig
+```
+
+
+
+

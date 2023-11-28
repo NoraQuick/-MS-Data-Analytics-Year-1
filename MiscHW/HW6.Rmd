@@ -1,0 +1,37 @@
+---
+title: "ST515-HW6"
+author: "Nora Quick"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+6.1:
+
+   (a) Fit the appropriate ANOVA model, and estimate the variance components due to alloy, casting, and bar (error). What percentage of the total variation in strength is due to alloys, to castings within alloys, and to bars within castings?
+
+![6.1.1](1.PNG)
+
+![6.1.2](2.PNG)
+
+In the end, 36.3% of alloys is due to strength, 8% is due to casting, and 88.5% is due to alloys.
+
+6.2:
+
+   (a) Use a model of log(size) as the sum of the overall mean, the fixed effect of fish, the random effect of pond nested within fish treatment, and a random error due to individuals within ponds. 
+   
+![6.2.1](3.PNG)
+
+   (b) Calculate the mean of log(size) in each pond, and use an appropriate t-test to compare the three means from the fish-containing ponds to the three means from the fishless ponds. That is, the input to your t-test should consist of just six data points.
+
+![6.2.2](4.PNG)
+
+![6.2.3](5.PNG)
+
+![6.2.4](6.PNG)
+
+   (c) Compare the results of these two approaches, and comment on which one you prefer.
+
+For part (a) we get to see the comparison between fish and fish pond which shows a significance level of if fish and pond effect size. This is much different to seeing the means of every fish + pond in part (b) and the variance from an equality for both 0 fish and 1 fish. 
+
+Of the two approaches I prefer the ANOVA test approach because we have been working largely with that for the term so I am more comfortable with it. In addition to that I feel as though it gives a better outcome for the analysis of fish to pond. That being said, it is very interesting to clearly see the mean sized of each pond with 0 or 1 fish so clearly. 

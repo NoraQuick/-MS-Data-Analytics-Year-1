@@ -1,0 +1,74 @@
+---
+title: "Lab Assignment 2"
+author: "Nora Quick"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r setup, include=FALSE, message=FALSE}
+library(magrittr)
+library(vcdExtra)
+library(tidyverse)
+```
+## Questions: 
+
+### Q1.How consistent are these data with Mendel's hypothesis of independence?  Notice that in this particular case, we're not interested in a *departure* from independence, but rather a *confirmation* of independence. Is a Chi-squared test appropriate here? Why or why not? 
+
+```{r}
+tab1 <- matrix(c(315, 108, 101, 32),2,2,byrow=TRUE)
+mosaic(tab1)
+
+sieve(tab1, shade = TRUE)
+```
+
+Based on the two graphs above I believe that the data is approximately independent.  
+
+Because the Chi-Squared test is used to test and no necessarily confirm independence (what we want to do here) I would say that it is not needed here.  
+
+
+### Q2.
+
+```{r}
+norm <- rnorm(1000)
+chi <- rchisq(1000, df = 1)
+```
+
+```{r}
+sqnorm <- norm * norm
+```
+
+```{r}
+dnorm <- density(sqnorm)
+dchi <- density(chi)
+```
+
+
+#### (a) Construct separate histograms/density plots of the raw chi-squared values and the *squares* of the standard normal values. What do you observe?
+
+```{r}
+hist(sqnorm)
+hist(chi)
+```
+
+```{r}
+plot(dnorm)
+plot(dchi)
+```
+
+I am very shocked to observe that in both cases of the histogram and the density are very similar. 
+
+#### (b) Recall (or obtain from `qnorm(0.975)` that the *2-sided 95%* critical values for the standard normal distribution are ± 1.96. Use `qchisq()` to compare the *square* of these 2-sided 95% critical values from the standard normal to the *one-sided* 95% critical value for the Chi-squared(1).  What does this suggest about tests based on these two reference distributions?
+
+```{r}
+qnorm(0.975)
+```
+
+```{r}
+sqrt(qchisq(chi, df = 1))
+```
+
+
+
+
+

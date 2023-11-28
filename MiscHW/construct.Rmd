@@ -1,0 +1,42 @@
+---
+title: "Construct"
+author: Nora Quick
+output: pdf_document
+---
+
+```{r}
+library(ggplot2)
+library(Lahman)
+```
+
+```{r}
+library(babynames)
+#babynames
+```
+
+```{r}
+n1 = subset(babynames, name == "Mary")
+n2 = subset(babynames, name == "Joe")
+```
+
+```{r}
+#Q2
+
+#ggplot(n1, aes(x = year, y = n, fill = sex)) + 
+#  geom_bar(stat = "identity")
+
+ggplot(n2, aes(x = year, y = n, fill = sex)) +
+  geom_bar(stat = "identity")
+
+ggplot(n2, aes(x = year, y = n, fill = sex), width=0.1) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(
+    name = "Number of Joe's",
+    breaks = c(0, 2000, 4000, 6000, 8000)) +
+  labs(title = "Comparison between Joe's",
+    subtitle = "Female vs Male babies named Joe througout the years") +
+  scale_fill_manual(values = c('#eba82d', '#4287f5'))
+```
+
+
+

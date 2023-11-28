@@ -1,0 +1,245 @@
+---
+title: "Data Manipulation"
+author: Nora Quick
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Learn
+
+```{r}
+library(tidyverse)
+dog_licenses <- readr::read_csv("https://github.com/merely-useful/novice-r/raw/master/data/nyc-dog-licenses.csv.gz") %>% drop_na(animal_name)
+```
+
+```{r}
+#View(dog_licenses)
+#dog_licenses
+```
+
+```{r}
+#arrange(dog_licenses, animal_birth_month)
+#arrange(dog_licenses, desc(animal_birth_month))
+```
+
+```{r}
+#arrange(dog_licenses, license_issued_date)
+```
+
+### 4.3.2 Exercise:
+```{r}
+arrange(dog_licenses, animal_name)
+```
+
+It shows that it will provide puncuation first, then numbers, then letters. In other words, puncuation and numbers are given first priority.
+
+```{r}
+#select(dog_licenses, animal_name)
+#select(dog_licenses, animal_name, breed_name)
+```
+
+```{r}
+#dog_by_date <- arrange(dog_licenses, license_issued_date)
+#select(dog_by_date, license_issued_date)
+```
+
+```{r}
+#select(dog_licenses, starts_with("Animal"))
+```
+
+```{r}
+#?dplyr::select
+```
+
+```{r}
+#arrange(dog_licenses, license_issued_date)
+#dog_licenses %>% arrange(license_issued_date)
+```
+
+```{r}
+#dog_licenses %>%
+#  arrange(license_issued_date) %>%
+#  select(license_issued_date)
+```
+
+### 4.4.5 Exercise:
+```{r}
+#select(dog_licenses, animal_name, breed_name)
+dog_licenses %>% select(animal_name, breed_name)
+```
+
+```{r}
+#name_and_breed <- select(dog_licenses, animal_name, breed_name)
+#arrange(name_and_breed, breed_name)
+dog_licenses %>%
+  select(animal_name, breed_name) %>%
+  arrange(breed_name)
+```
+
+```{r}
+#dog_licenses %>% filter(animal_name == "BRUNO")
+```
+
+```{r}
+#dog_licenses %>% filter(license_issued_date == animal_birth_month)
+```
+
+```{r}
+#dog_licenses %>% filter("animal_gender" == "M")
+#dog_licenses %>% filter(animal_gender == "M")
+```
+
+### 4.4.7 Exercise:
+```{r}
+dog_licenses %>% filter(animal_name == "SPOCK")
+dog_licenses %>% filter(animal_name == "PICARD")
+dog_licenses %>% filter(animal_name == "JANEWAY")
+dog_licenses %>% filter(animal_name == "HARRY")
+```
+
+```{r}
+#dog_licenses %>% filter(animal_name == "BRUNO")
+#dog_licenses %>% filter(borough == "Brooklyn")
+#dog_licenses %>% filter((animal_name == "BRUNO") & (borough == "Brooklyn"))
+```
+
+```{r}
+#dog_licenses %>% filter((animal_name == "BRUNO") | (animal_name == "BRUCE"))
+```
+
+```{r}
+#dog_licenses %>% filter((animal_name == "BRUNO") | (animal_name == "BRUCE") | (animal_name == "BRADY"))
+```
+
+```{r}
+#dog_licenses %>% filter(animal_name %in% c("BRUNO", "BRUCE", "BRADY"))
+```
+
+### 4.4.10 Exercise:
+```{r}
+start_of_2016 <- as.Date("2016-01-01")
+endt_of_2016 <- as.Date("2016-12-31")
+
+dog_licenses %>% filter(license_expired_date %in% c(start_of_2016, endt_of_2016))
+```
+
+```{r}
+#dog_licenses %>% 
+#  mutate(called_chase = animal_name == "CHASE") %>% 
+#  select(animal_name, called_chase)
+```
+
+```{r}
+#dog_licenses %>%
+#  mutate(called_chase = animal_name == "CHASE") %>%
+#  filter(called_chase)
+```
+
+```{r}
+#dog_licenses %>%
+#  mutate(called_chase = ifelse(animal_name == "CHASE", "called chase", "not called chase")) %>%
+#  select(animal_name, called_chase)
+```
+
+```{r}
+#dog_licenses %>%
+#  mutate(is_chase = animal_name == "CHASE",called_chase = ifelse(is_chase, "called chase", "not called chase")) %>%
+#  select(animal_name, is_chase, called_chase)
+```
+
+```{r}
+#dog_licenses %>%
+#  mutate(license_duration = license_expired_date - license_issued_date) %>%
+#  select(license_duration)
+
+#dog_licenses %>%
+#  mutate(license_duration = license_expired_date - license_issued_date,
+#    avg_duration = mean(license_duration)) %>%
+#  select(license_duration, avg_duration)
+```
+
+### 4.5.3 Exercise:
+```{r}
+dog_licenses %>%
+  mutate(name_length = stringr::str_length(animal_name)) %>%
+  arrange(desc(name_length))
+```
+
+There are four dogs with 30 character names with the classified longest name of 	CARLYAPPLEWHITECRAWFORDCOLEMAN.
+
+
+## Apply
+```{r}
+us_pop <- read_rds("http://data.cwick.co.nz/us-population.rds")
+us_pop
+```
+
+### 1.
+
+```{r}
+us_pop <- arrange(us_pop, date)
+```
+
+### 2.
+
+```{r}
+ggplot(us_pop, aes(date, population)) +
+  geom_line()
+```
+
+### 3.
+
+```{r}
+us_pop <- us_pop %>% 
+  mutate(prev_population = lag(population))
+```
+
+This compares the "current" population to the previous population. In other words, it compares each rows population to the population of the row above.
+
+### 4. 
+```{r}
+us_pop <- us_pop %>%
+  mutate(change_rate = (population/prev_population))
+us_pop
+```
+
+### 5. 
+```{r}
+ggplot(us_pop, aes(date, change_rate)) +
+  geom_line()
+  #geom_point()
+```
+
+### 6. 
+```{r}
+us_pop <- us_pop %>% filter(year %in% ("1901":"1989"))
+
+ggplot(us_pop, aes(date, change_rate)) +
+  geom_line()
+```
+
+### 7. 
+```{r}
+us_pop <- us_pop %>%
+  mutate(log10_population = log10(population))
+
+ggplot(us_pop, aes(date, log10_population)) +
+  geom_line()
+```
+
+The population has steadily increased over the years. 
+
+### 8. 
+```{r}
+us_pop %>% 
+  ggplot(aes(date, population)) +
+    geom_line() +
+    scale_y_log10(labels = scales::label_comma())
+```
+
+They both have a similar trend in increase rate. I find the second one easier to understand because the I find the populatoin number easier to understand. 
+
+

@@ -1,0 +1,51 @@
+---
+title: "interum"
+output: pdf_document
+---
+
+```{r}
+q3 <- read.csv("Q3 Project Data.csv")
+names(q3)[4] <- 'AGEP'
+
+q3
+```
+
+```{r}
+q3 <- subset(q3, RAC1P != "american indian & alaska")
+q3 <- subset(q3, RAC1P != "other_2")
+
+q3$AGEP <- as.factor(q3$AGEP)
+
+q3noint <- subset(q3, ACCESSINET == "None")
+q3paid <- subset(q3, ACCESSINET == "yes, paid")
+q3unpaid <- subset(q3, ACCESSINET == "yes, unpaid")
+```
+
+```{r}
+lmnone <- lm(proportion ~ AGEP + RAC1P, data = q3noint)
+lmpaid <- lm(proportion ~ AGEP + RAC1P, data = q3paid)
+lmunpaid <- lm(proportion ~ AGEP + RAC1P, data = q3unpaid)
+```
+
+```{r}
+summary(lmnone)
+summary(lmpaid)
+summary(lmunpaid)
+```
+
+```{r}
+#plot(lmnone)
+plot(lmpaid)
+#plot(lmunpaid)
+```
+
+
+```{r}
+summary(influence.measures(lmnone))
+summary(influence.measures(lmpaid))
+summary(influence.measures(lmunpaid))
+```
+
+
+
+

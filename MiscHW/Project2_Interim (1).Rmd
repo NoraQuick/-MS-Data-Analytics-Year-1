@@ -1,0 +1,57 @@
+---
+title: "Project#2_Interim"
+author: "Tyler Busby"
+date: "5/10/2022"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readxl)
+library(ggplot2)
+library(tree)
+library(rpart)
+
+ 
+full <- read.csv("C:/Users/Tyler/Personal/ST 538 Methods Big Data/train.csv/train.csv")
+
+## 75% of the sample size
+smp_size <- floor(0.75 * nrow(full))
+
+## set the seed to make your partition reproducible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(full)), size = smp_size)
+
+train <- full[train_ind, ]
+test <- full[-train_ind, ]
+
+as.data.frame(train)
+head(train)
+
+
+mod = glm(target ~ . , data = train, family = "binomial")
+summary(mod)
+
+
+
+```
+
+```{r}
+
+# Classification Tree
+rpart = rpart(as.factor(target)~ps_car_15 +ps_car_11 + ps_ind_07_bin + ps_car_12 +ps_ind_03,method = "class",control =rpart.control(minsplit =1,minbucket=1, cp=0), data = train)
+# display the results
+printcp(rpart) 
+# visualize cross-validation results
+plotcp(rpart) 
+# detailed summary of splits
+summary(rpart, pretty = T) 
+# plot tree
+plot(rpart, uniform=TRUE,
+     main="Classification Tree")
+text(rpart.sim1, use.n=TRUE, all=TRUE, cex=.5)
+
+
+```
+

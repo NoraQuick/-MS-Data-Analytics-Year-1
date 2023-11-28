@@ -1,0 +1,77 @@
+---
+title: "Lab Assignment 3"
+author: "Nora Quick"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r, message=FALSE}
+library(vcdExtra)
+library(tidyverse)
+library(magrittr)
+```
+
+# 1. Install and load the *AER* package, and read the help file for the `ResumeNames` data. 
+
+```{r, message=FALSE}
+library(AER)
+```
+
+```{r}
+?ResumeNames
+
+data("ResumeNames")
+#summary(ResumeNames)
+```
+
+
+# 2. Come up with a question about the probability of `callback` (the binary response) that can be answered using at least one (but no more than 5) of the 26 available predictor variables.
+
+Does callback probability differ between male and female applicants by industry or position?
+
+
+# 3. Use a logisitic regression model to address the question you posed in 2. Be sure to examine the fit of your model, and write a few sentences about your interpretation of the  model as it addresses the question you posed.
+
+```{r}
+gender_callback <- glm(call ~ gender + industry + wanted, family = binomial(link = "logit"), data = ResumeNames)
+summary(gender_callback)
+```
+
+```{r}
+ggplot(data = ResumeNames) + 
+  # plot jittered data
+  geom_jitter(aes(x = call, 
+                 y = industry,
+                 color = gender,
+                 shape = gender),
+                 height = 0.05, width = 0.2) + 
+  
+  # plot loess smoother
+  geom_smooth(aes(x = call, 
+                y = industry,
+                 color = call)) + 
+  
+facet_grid(.~call) + 
+  ggtitle("Loess Smooth for ResumeName")
+```
+
+```{r}
+ggplot(data = ResumeNames) + 
+  # plot jittered data
+  geom_jitter(aes(x = call, 
+                 y = wanted,
+                 color = gender,
+                 shape = gender),
+                 height = 0.05, width = 0.2) + 
+  
+  # plot loess smoother
+  geom_smooth(aes(x = call, 
+                y = wanted,
+                 color = call)) + 
+  
+facet_grid(.~call) + 
+  ggtitle("Loess Smooth for ResumeName")
+```
+
+As we can see by both the glm output and both graphs there is a probability difference for callbacks in both industry and position. Our logistic model shows significance in industrytransport/communication, industryhealth/education/social services, and wantedoffice support. As we can see these correlate to the most female dominant callback industires and positions. These are shown to be more probable positions for woman than men and we could also determine this based on the society we live in. We largely see women in health care positions, educational positions, and secretarial positions due to historical reasons. 

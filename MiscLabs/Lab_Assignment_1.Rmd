@@ -1,0 +1,41 @@
+---
+title: "Lab Assignment 1"
+author: "Nora Quick"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, message = FALSE}
+library(vcdExtra)
+library(Sleuth3)
+library(tidyverse)
+```
+
+
+## Questions: 
+
+### Q1.Starting from the `case1902` data file in the *Sleuth3* package, produce a flat table With Aggravation level as the rows, with Death/NoDeath as the two wide columns that contain Black/White within them.
+
+```{r}
+penalty <- case1902
+
+penalty_freq <- gather(data = penalty, key = Sentence, value = Freq, c("Death", "NoDeath"), factor_key = TRUE)
+penalty_case <- expand.dft(penalty_freq)
+penalty_tab <- xtabs(~ Sentence + Victim + Aggravation, penalty_case)
+
+flat_table <- ftable(penalty_tab ,row.vars="Aggravation", col.vars = c("Sentence", "Victim"))
+flat_table
+```
+
+### Q2.Create a mosaic plot of the flat table you produced in question 1. Are there problems with your plot? Is it easy to understand?  You are welcome to play around with making it more interpretable and/or visually appealing, but that's optional for this assignment. 
+
+```{r}
+mosaic(flat_table)
+```
+
+There are a few problems with the plot. To begin with the axis are not labeled well so it's not eary to understand what we are seeing in the graph. In addition to that, the numbers on the top do not mean anything without labels or knowing what the data is/means.
+
+Overall, no, this graph is not easy to understand. In fact, it is quite hard to understand.
+
+

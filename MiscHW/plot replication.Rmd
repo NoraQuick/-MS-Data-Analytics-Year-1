@@ -1,0 +1,32 @@
+---
+title: "Plot Replication"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+board_games <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-03-12/board_games.csv")
+```
+
+```{r}
+#board_games$name
+```
+
+
+```{r}
+ggplot(data=board_games,aes(year_published,average_rating))+
+  geom_point(mapping=aes(x=year_published,y=average_rating),alpha = 1/8)+
+  geom_smooth(mapping=aes(x=year_published,y=average_rating),se=FALSE,color="red")+
+  labs(x = "Year Published",y="Average User Rating",title = "A Golden Age Of Board Games?"
+       ,subtitle = "Average user ratings for games by original year of production" )+
+  theme(panel.grid.major = element_line(color = "grey")) +
+geom_point(data = subset(board_games, name == 'Mouse Trap' | name == 'Acquire' | name == 'Connect Four' | name =='Twilight Struggle' | name == "The Settlers of Catan"), aes(year_published, average_rating)) +
+  geom_text(data=subset(board_games, name == 'Mouse Trap' | name == 'Connect Four'), aes(year_published, average_rating, label = name), nudge_y = -0.25) +
+  geom_text(data=subset(board_games, name == 'Acquire' | name == 'Twilight Struggle' ), aes(year_published, average_rating, label = name), nudge_y = 0.3)
+```
+
+
+
+
+
+

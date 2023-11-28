@@ -1,0 +1,124 @@
+---
+title: "Assignment 4"
+author: Nora Quick
+output: html_document
+---
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(ggplot2)
+library(plotly)
+library(plyr)
+
+options(warn = - 1)  
+```
+
+Formula 1 is the highest level of international car racing. It consists of ten teams with two drivers/two cars for each team. Each year there is a set number of races (circuits) in countries all over the world where these teams compete for the constructors cup and the drivers compete for the championship.
+
+The plot below shows all circuits raced between 1970-2017. The hover provides the name of the circuit, city it's raced in, and country it's raced in.
+
+```{r}
+circ <- read.csv("circuits.csv")
+
+#head(circ)
+
+circ$name <- gsub("-", " ", circ$name)
+circ$location <- gsub("-", " ", circ$location)
+circ$location <- gsub("\xcc_", "", circ$location)
+circ$name <- gsub("\xcc_", "", circ$name)
+circ$name <- gsub("\U3e63633c\U3e31633c", "a", circ$name)
+circ$name <- gsub("\xcc\xf8", "i", circ$name)
+
+#circ
+
+#Sys.setlocale('LC_CTYPE','C')
+
+g <- list(showland = TRUE,
+  landcolor = toRGB("#e5ecf6"))
+
+fig <- plot_geo(circ, lat = ~lat, lon = ~lng)
+
+fig <- fig %>% add_markers(
+  text = ~paste(name, location, country, sep = "<br />"),
+  color = ~country, symbol = I("circle"), size = I(8), hoverinfo = "text"
+)
+
+fig <- fig %>% layout(
+    title = 'F1 Circuits of the World<br />(1970-2017)', geo = g
+)
+
+fig <- fig %>% layout(autosize = F, width = 800, height = 500)
+
+fig
+```
+
+As the sport has grown the number of races has increase. Recently it has been discussed by the mechanics that there are too many races in a season and this can be seen if you look at historical years. The below shows how much the number of rounds (races) in a year has increased over 47 years. 
+
+```{r}
+races <- read.csv("races.csv")
+
+#head(races)
+
+num_races <- count(races, "year")
+#year <- races[!duplicated(races[ , c("year")]),]
+
+new_races <- data.frame(num_races)
+
+colnames(new_races)[2] <- "num_rounds"
+
+fig1 <- plot_ly(new_races, type = 'scatter', mode = 'lines+markers')%>%
+  add_trace(x = ~year, y = ~num_rounds, hovertemplate = 'Year: %{x}<br />Number of Rounds: %{y}<extra></extra>')%>%
+  layout(showlegend = F)
+
+fig1 <- fig1 %>%
+  layout(
+         xaxis = list(zerolinecolor = '#ffff',
+                      zerolinewidth = 2,
+                      gridcolor = 'ffff'),
+         yaxis = list(title = 'Number of Races',
+                      zerolinecolor = '#ffff',
+                      zerolinewidth = 2,
+                      gridcolor = 'ffff'),
+         plot_bgcolor='#e5ecf6', width = 900)
+
+fig1 <- fig1 %>% layout(
+    title = 'Number of Circuits Raced Each Year<br />(1970-2017)', geo = g
+)
+
+fig1 <- fig1 %>% layout(autosize = F, width = 800, height = 500)
+
+fig1
+```
+
+The skill of the mechanics that do pitstops has been progressively perfected. In this graph we can see the speed that the mechanics can get the car into the pitlane, tyres changes, and out of the pitlane. 
+
+```{r}
+ps <- read.csv("pitStops.csv")
+
+#head(ps)
+
+ps$stop <- as.factor(ps$stop)
+ps$duration <- sapply(sapply(ps$duration, as.character), as.numeric)
+
+#ggplot(ps, aes(x=stop, y=duration, color=stop)) + 
+#  geom_boxplot(outlier.alpha = 0.1) +
+#  ggtitle("Average Duration of PitStops")
+
+fig3 <- plot_ly(ps, x=~stop, y =~duration, color = ~stop, type = "box")
+
+fig3 <- fig3 %>% layout(
+    title = 'Duration of Pit Stops (in seconds)<br />Number of Pits Stops Each Race', geo = g
+)
+
+fig3 <- fig3 %>% layout(autosize = F, width = 800, height = 500)
+
+fig3
+```
+
+
+
+
+
+
+
+

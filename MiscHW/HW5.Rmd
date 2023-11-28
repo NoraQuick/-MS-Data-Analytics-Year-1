@@ -1,0 +1,100 @@
+---
+title: "ST515-HW5"
+author: "Nora Quick"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+5.1:
+
+   (a) Draw graphs that illustrate the variation in harvest weight with (i) irrigation method, and (ii) block. Do these factors appear to influence weight?
+
+![5.1.1](4.PNG) 
+
+![5.1.2](5.PNG)
+
+Based on both graph both method and block appear to influence the weight of the oranges. However, it appears that block has much more variance in weight that method so I would conclude that block has the bigger influence on weight. 
+
+   (b) Perform an appropriate analysis of variance, and interpret your results.
+
+![5.1.3](6.PNG)
+
+With a p-value of 0.00137 (< 0.05) I conclude that block significantly influences the weight of the oranges. With a p-value of 0.37937 (> 0.05) I conclude that method does not have a significant influence on the weight of the oranges.
+
+   (c) Calculate the relative efficiency of the randomized block design for this example. If we were to run this experiment as a completely randomized design, how many plots would we need to match the power of the randomized block design?
+
+![5.1.4](7.PNG)
+
+If we were to have a completely randomized design we would need 6 plots to match the power of the randomized block design.
+
+   (d) Use Friedman’s test to test for an effect of irrigation method on production, and interpret your result. How does it compare to what you found in part (b)?
+
+![5.1.5](8.PNG)
+
+With Friedman's test we are much closer to having method be a significant influence of the weight of the oranges with a p-value of 0.06057. It, however, is still not quite at a level where it is significant to while it is much different than part (b) it still reaches the same conclusion that method does not have a significant influence on the weight of the oranges. 
+
+
+5.2:
+
+   (a) Draw a picture of the layout of this experiment, like that in Display 8.3 in the lecture notes (do not include the numerical value of the response in each plot). For the sake of uniformity, use technician as the column factor and time period as the row factor. 
+   
+![5.2.1](9.PNG)
+
+   (b) Analyze the effect of construction method on the time to build the component, assuming that technician and time period are both fixed effects. Include a graphical summary of the (main) effects of construction method and the blocking factors, the ANOVA table, and an interpretation of the results.
+
+![5.2.2](10.PNG)
+
+![5.2.3](11.PNG)
+
+![5.2.4](12.PNG)
+
+![5.2.5](13.PNG)
+
+![5.2.6](14.PNG)
+
+As we can see from the multiple graphs and the ANOVA test, the most influencial variable is minutes on the period. Because every technicial works on each of the methods once those two are the same for period across the board. The thing that does change for each of the technicials with a method is the minutes it took for them to finish constructing the electronic component.
+
+
+5.3:
+
+   (a) Briefly summarize the patterns you see in the plot: Does study have much of an effect? Which treatment(s) results in the highest biomass, and which results in the lowest biomass? Is the pattern consistent across studies?
+
+![5.3.1](15.PNG)
+
+Based on this graph I conclude that the study does have an effect on the biomass. Study 1, 7, and 8 seem to have the highest biomass which shows that when there is both nutrients and fish the biomass is much higher. Study 4 and 10 seem to have the lowest biomass which shows that when there are neither fish nor nutrients the biomass is much smaller. 
+
+   (b) Using log-transformed phytoplankton biomass as the response, fit an appropriate ANOVA model with study, fish, nutrients, and the fish-by-nutrient interaction as the explanatory variables. Summarize the hypothesis tests included in the ANOVA table, and interpret your results.
+
+![5.3.1](16.PNG)
+
+The hypothesis which we are testing is that all variables (study, fish, and nutrients) all result in the same level of effect on the biomass. In other words mu1 = mu2 = m3...
+
+From the ANOVA table above we can see that the null hypothesis is true. All three variables (study, fish, and nutrients) produce a significant p-value inidicating that all have a significant influence on the biomass.
+
+   (c) Now fit a regression model that lacks the fish by nutrient interaction term. Use the regression output from this model to construct 95% confidence intervals for the effects of fish (high vs. low) and nutrients (high vs. low) on log(biomass) of phytoplankton. Describe the directions and magnitudes of the estimated effects. Is the result consistent with what you see in your graph from part (a)? Explain.
+
+![5.3.1](17.PNG)
+
+All the intervals for both are positive which shows that it is in fact consistant with the graph from part (a). In other words, the presence of fish and the presence of nutrients both have a positive effect on the biomass. 
+
+   (d) What is the interpretation of the intercept from the regression model in part(c)?
+
+The intercept of both regression models show a significance while the variable themselves don't show that. This indicates that they have an influence on the biomass but it is not individually. They have a significant influence when they are combined.
+
+
+5.4:
+
+   (a) In words, what kind of design is this?
+
+Due to it being similar to the store promotion example from lecutures I would classify it as a single-factor ANOVA test. The response variable being the strength of the cotton after the chemical treatments and the covariate being the strength of the cotton after the chemical treatments of each day. 
+
+   (b) Analyze the data, and give a nontechnical summary of your findings. Include an ANOVA table and a tabular or graphical summary of the effects of the chemical treatments on cotton strength.
+
+![5.4.1](1.PNG) 
+
+![5.4.2](2.PNG)
+
+![5.4.3](3.PNG)
+
+Based on the results above we can determine that treatment 1 was the most significant to affect the strength of cotton. 

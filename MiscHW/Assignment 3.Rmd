@@ -1,0 +1,145 @@
+---
+title: "Assignment exploration"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE}
+library(rworldmap)
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+```
+
+```{r}
+# Read in the circuits CSV
+circ <- read.csv("circuits.csv")
+
+#head(circ)
+
+world <- map_data("world")
+world
+
+#Map the world
+ggplot() +
+  geom_map(
+    data = world, map = world,
+    aes(long, lat, map_id = region),
+    color = "white", fill = "lightgray", size = 0.1
+  ) +
+#Map the coordinates of the circuits
+  geom_point(
+    data = circ,
+    aes(lng, lat, color = country),
+    alpha = 0.7
+  ) +
+#Add a title
+  ggtitle("Circuits of the world")
+
+
+#SPENT HOURS TRYING TO GET IT TO WORK
+#Get the world map
+#Took SO long to get working
+#worldmap <- getMap(resolution = "coarse")
+
+#Plot a world map
+#plot(worldmap, xlim = c(-80, 160), ylim = c(-50, 100), 
+#     asp = 1, bg = "lightblue", col = "black", fill = T)
+
+#Add the locations of circuits with lon and lat
+#points(circ$lat, circ$lng, col = "red", cex = .01)
+```
+
+```{r}
+# Read in the constructor and contsuctor results CSVs
+con <- read.csv("constructors.csv")
+conr <- read.csv("constructorResults.csv")
+
+#head(con)
+#head(conr)
+
+#Merge them so we know which result is for which constructor
+con_merge <- merge(con,conr,by="constructorId")
+
+#head(con_merge)
+
+unique_nat <- length(unique(con_merge$nationality))
+unique_name <- length(unique(con_merge$name))
+
+#Number of nationalities
+unique_nat
+unique_name
+
+#Sum team points for each team
+tp <- con_merge %>%
+  group_by(name) %>%
+  summarise(team_points = sum(points))
+
+#head(tp)
+
+#Only have 1 row for each team
+df <- con_merge[!duplicated(con_merge[ , c("constructorId","name")]),]
+
+#head(df)
+
+#Add team points
+point_merge <- merge(tp,df,by="name")
+
+#head(point_merge)
+
+#Number of teams who have and haven't scored points. 
+total_teams <- length(point_merge$name)
+team_no_p <- length(point_merge[point_merge$team_points != 0, ])
+team_p <- total_teams - team_no_p
+
+total_teams
+team_no_p
+team_p
+
+#Only teams who have scored points
+only_points <- point_merge[point_merge$team_points != 0, ]
+
+head(only_points)
+
+#ggplot(only_points, aes(x=nationality, y=team_points, fill=nationality)) + 
+#    geom_dotplot()
+
+ggplot(only_points, aes(x=team_points, color = nationality)) + geom_histogram(fill="white") + ggtitle("Points vs Nationality")
+```
+
+```{r}
+# Read in the pitstop CSV
+ps <- read.csv("pitStops.csv")
+
+head(ps)
+
+ps$stop <- as.factor(ps$stop)
+ps$duration <- sapply(sapply(ps$duration, as.character), as.numeric)
+
+ggplot(ps, aes(x=stop, y=duration)) + 
+  geom_boxplot(outlier.alpha = 0.1) +
+  ggtitle("Average Duration of PitStops")
+
+#ps1 <- drop_na(ps$duration)
+
+#ps1 <- as.double(ps1$duration)
+
+#head(ps)
+
+#time <- ps %>%
+#  group_by(stop) %>%
+#  summarise(time = as.float(duration))
+
+#head(time)
+```
+
+
+
+
+
+
+
+
+
+
+

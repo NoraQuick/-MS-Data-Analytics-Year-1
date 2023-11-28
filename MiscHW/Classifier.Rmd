@@ -1,0 +1,108 @@
+---
+title: "Binary Classifier: Email Data"
+output: html_notebook
+---
+
+# Initial setup
+
+```{r}
+library(openintro)
+library(vcdExtra)
+library(ggplot2)
+library(tidyverse)
+library(magrittr)
+library(boot)
+```
+
+```{r}
+?email
+names(email)
+```
+
+## Training & Test Sets
+
+Sample 75% of the email dataset, perform a simple logisitic regression.
+
+```{r}
+(n <- dim(email)[1])
+(r <- round(n*.75))
+idx <- 1:n
+nidx <- sample(idx,r,replace=F)
+email75 <- email[nidx,]
+email25 <- email[-nidx,]
+
+pmod1 <- glm(spam~to_multiple,data=email75,family=binomial)
+summary(pmod1)
+```
+
+## Predictions
+
+Get predictions for the model;
+
+```{r}
+pred <- predict.glm(pmod1,newdata = email25, type="link")
+phat <- plogis(pred)
+```
+
+Now, we need a classifier rule to take these probabilities and turn them into 0's and 1's. Let's just use:
+
+```{r}
+ytilde <- ifelse(phat >= 0.50,1,0)
+# and then calculate MSPE:
+(MSPE1 <- mean((ytilde-email25$spam)^2))
+```
+
+That's actually not a bad mis-classification rate, but the reason is really that there are not that many spam emails!
+
+```{r}
+(mean(email25$spam))
+```
+
+This is exactly the same as the MSPE, because our classification rule classified everything in `email25` as non-spam!
+
+# More Realistic Model
+
+Now, lets' look at a more realistic prediction model and recaclulate MSPE.
+
+```{r}
+mod2 <- glm(spam~to_multiple+winner+format+re_subj+exclaim_subj+cc+attach+dollar+inherit+password,data=email75,family="binomial")
+summary(mod2)
+
+pred <- predict.glm(mod2,newdata=email25,type="link")
+email25$phat <- plogis(pred)
+ggplot(email25,aes(phat)) + geom_histogram()
+```
+
+Now it looks like some of the predicted probabilities are fairly large, so let's use the same classification rule we did above and recalculate MSPE:
+
+```{r}
+ytilde <- ifelse(email25$phat >= 0.5,1,0)
+(MSPE2 <- mean((ytilde-email25$spam)^2))
+```
+
+Well...only a moderately better MSPE, but maybe we need a better classification rule. This is where looking at the ROC curve can help -- we have a prediction model, and now we want to find the optimal classification rule.
+
+## ROC Curves
+
+We'll use the package `pROC`, so if you don't have that installed you'll have to get it.
+
+```{r}
+#library(pROC)
+?roc
+
+roc(email25$spam,email25$phat,plot=TRUE)
+```
+
+This seems to suggest that we use 0.60 as our cut-off for the classification rule:
+
+```{r}
+ytilde2 <- ifelse(email25$phat > 0.6,1,0)
+(MSPE3 <- mean((ytilde2-email25$spam)^2))
+```
+
+This is just marginally better than our orginal cut-off of 0.5, but we're not going to get much better using this prediction model.
+
+## Next Steps 
+
+In the lab for this module, you'll look at finding other prediction models for the email data that might do a better job than this one did.
+
