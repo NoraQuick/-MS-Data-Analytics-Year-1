@@ -1,0 +1,338 @@
+---
+title: "ST 516 - Module 4 Lab"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+---
+
+```{r, include=FALSE}
+library(learnr)
+knitr::opts_chunk$set(echo = TRUE, exercise.eval = FALSE, warning = FALSE, fig.width = 5, fig.height = 3)
+```
+
+
+```{r setup, include = FALSE}
+library(ggplot2)
+library(Sleuth3)
+nitrogen <- data.frame(nitrogen_content = c(2.1, 2.47, 1.75, 2.94, 1.69, 2.75, 2.82, 2.52, 2.77, 1.98, 2.7, 2.43, 2.17, 2.8, 2.82, 2.38, 2.68, 2.39, 1.99, 2.1, 2.67, 2.65, 2.06, 2.55, 2.22, 2.92, 3.05, 2.77, 2.36, 1.8, 3.09, 2.2, 2.93, 1.85, 2.28, 1.96))
+```
+
+## Introduction
+
+In this lab you will calculate a z-value, 
+perform a hypothesis test, 
+and find a confidence interval estimate for the mean 
+based on the formulae presented in the lectures.
+Doing the calculations like this "by hand" helps cement the operations, 
+but in future modules, 
+you'll use built-in functions to conduct the analysis procedures. 
+
+You'll also see how you might report the results 
+in a non-technical summary of your findings.
+Communication is an essential part of the analysis cycle,
+and doing this accurately,
+and in the context of the problem,
+is a key skill you'll practice all quarter.
+
+In this lab, you'll be working with nitrogen content data 
+from Ott and Longnecker's book, *An Introduction to Statistical Methods and Data Analysis, 5th Edition*. 
+Leaves from 36 different apple tree orchards 
+are crushed and their percentage nitrogen content is analyzed. 
+This will give scientists an idea of the mean nitrogen content of apple trees
+across all such orchards and whether there is too little or too much nitrogen. 
+The best yield occurs when the nitrogen content is approximately 2.5%.
+
+This data is stored in a data frame called `nitrogen`. 
+Data frames are an object type in R 
+specifically for storing rectangular data sets 
+(i.e. data stored in rows and columns, 
+where each row has the same number of columns, 
+and each column has the same number of rows). 
+If you type a data frame's name you'll see the entire data set:
+```{r, warning=FALSE}
+nitrogen
+```
+This isn't a particularly exciting data frame because it only has one column: 
+a column called `nitrogen_content`. 
+Notice that there are 36 rows, 
+each row corresponds to one orchard, and
+there are 36 orchards in this study.  
+
+As data sets get larger, 
+printing the entire data frame becomes less useful 
+since there are so many rows.
+Instead you might like to just print the first few rows using the `head()` function:
+```{r, warning=FALSE}
+head(nitrogen)
+```
+
+### Your Turn
+
+The `ex0321` data set from the `Sleuth3` package has the lifetime of baseball umpires.
+
+Run the following code to help answer the questions below:
+```{r umpires-view, exercise = TRUE, exercise.eval = FALSE}
+ex0321
+```
+
+```{r umpires-nrow, echo = FALSE}
+question("How many rows does `ex0321` have?",
+  answer("3"),
+  answer("6"),
+  answer("177"),
+  answer("227", correct = TRUE),
+  correct = "Yup! In this data each row corresponds to an umpire.",
+  incorrect = "Not quite, you can see the umber of rows by printing the data frame."
+)
+```
+
+
+```{r umpires-colnames, echo = FALSE}
+question("Which of the following are names of columns in `ex0321`?",
+  type = "multiple",
+  answer("Lifelength", correct = TRUE),
+  answer("censored", 
+    message = "Careful with case, `Censored` is the name of a column, but `censored` is not."),
+  answer("Expected", correct = TRUE),
+  answer("ex0321", message = "`ex0321` is the name of the data frame.")
+)
+```
+
+## Extracting a vector from a data frame
+
+In previous modules you've mostly been working with vectors not data frames.  
+In this lab you'll continue that practice, 
+so we'll pull out the `nitrogen_content` column from the `nitrogen` data frame, 
+and store it in a vector called `x`.
+`x` isn't a particularly informative variable name, but
+we use it here to help you see the correspondence between the code
+and the formula from lecture.
+```{r}
+# Define `x` as: 
+# *all rows*, and 
+# *the column called "nitrogen_content"* 
+# of "nitrogen"
+x <- nitrogen[ , "nitrogen_content"] 
+```
+
+You've seen square brackets `[` used to subset a vector, 
+and they can also be used to subset a data frame. 
+However, since data frames are two dimensional (they have rows and columns),
+you must specify two arguments to `[`, 
+the first indexing the rows, and 
+the second indexing the columns.
+If an argument is blank, it defaults to "all", 
+e.g. here a space before the comma indicates "all rows".
+
+Take a look at a histogram of the 36 nitrogen contents to get a sense of our data.
+```{r}
+qplot(x, binwidth = 0.1, xlab = "Nitrogen Content")
+```
+
+This sample has a mean of about `r round(mean(x), 2)`
+```{r}
+mean(x)
+```
+
+In the next two sections you'll:
+
+* test the hypothesis that the mean nitrogen content for all orchards is equal to 2.5, and
+* construct a confidence interval for the mean nitrogen content for all orchards.
+
+### Your turn
+
+Some of the umpires in `ex0321` were still alive at the time of the study, we might exclude them since we don't know their actual life length, only that it is greater then then value recorded.  
+
+This code, extracts the values in the column for life length for only the rows of umpires that had died by the time of the study (`Censored == 0`), and stores them in a vector called `umpire`:
+```{r include=TRUE}
+not_alive <- ex0321[, "Censored"] == 0
+umpire <- ex0321[not_alive, "Lifelength"]
+```
+
+Find the sample mean life length of the umpires in `umpire`:
+```{r mean-umpire, exercise = TRUE}
+
+```
+
+```{r mean-umpire-hint}
+mean(umpire)
+```
+
+```{r umpires-sample-mean, echo = FALSE}
+question("The average life length of umpires that had died at the time of the study was is about:",
+  answer("67.2"),
+  answer("67.5"),
+  answer("68.5", correct = TRUE),
+  answer("69.5")
+)
+```
+
+## Test Statistics and p-values
+
+We are interested in the null hypothesis that the mean nitrogen content of all orchard trees is 2.5, and the alternative hypothesis is that mean nitrogen content of all orchard trees is different than 2.5. (*This value has been chosen because the best yield happens when the nitrogen content is approximately 2.5%*). 
+
+In mathematical notation:
+
+  $$H_{0}: \mu = 2.5$$
+  $$H_{A}: \mu \neq 2.5$$
+
+With a sample size of 36 and no outliers and no indication of strong skew, we know $\overline{x}$ is approximately Normally distributed. Therefore, under $H_{0}$:
+
+  $$Z = \frac{\overline{x} - \mu}{s/\sqrt{n}} \stackrel{\cdot}{\sim} N(0,1)$$
+
+For more details, see Module 4 lectures, or  **Section 4.3.4** of *OpenIntro Statistics*. For now, we focus on the calculating the test statistic in R, and getting a p-value.  The Z-statistic is 
+```{r, warning=FALSE, message=FALSE}
+# Calculate z-statistic
+Z <- (mean(x) - 2.5) / (sd(x)/sqrt(length(x)))
+Z
+```
+
+You can think about this as a standardized measure of how far our sample mean is from our hypothesized mean, relative to the variation we would expect from the sample mean in samples of this size.
+
+```{r code-formula, echo = FALSE}
+question("Referring to the code and formula above, how is $\\overline{x}$ 
+  represented in the code?",
+  answer("`2.5`"),
+  answer("`mean(x)`", correct = TRUE),
+  answer("`sd(x)`")
+)
+```
+
+We quantify how unusual our sample would be if the null hypothesis were true, by finding the p-value.  If the null hypothesis were true, then $Z$ would be distributed as a standard Normal, and we need to find the probability a standard Normal is as, or more extreme, than `r round(Z, 4)`.  The `pnorm()` can be used to find this value exactly.  If you provide `pnorm()` with a quantile (our test statistic) it will return a probability:
+```{r}
+# Calculate p-value (two-sided test)
+P <- 2 * pnorm(abs(Z), mean = 0, sd = 1, lower.tail = FALSE)
+P
+```
+
+The argument `lower.tail = FALSE` tells `pnorm()` to return the probability that a N(0,1) random variable is greater than the absolute value of Z, thus giving us the probability in the right tail. Since we are performing a two-sided test, we must multiply this probability by 2 --- the probability a N(0,1) random variable is greater than Z or less than Z. This gives us the total probability of obtaining a sample mean at least as far from the center of the population as the sample mean that we have. Use `?pnorm()` to learn more about the function.
+
+To illustrate, here's the a standard Normal distribution with the probabilities we are estimating shaded in dark grey:
+```{r, echo=FALSE}
+x1 <- seq(from = -4, to = 4, by = 0.001)
+y1 <- dnorm(x1, 0, 1)
+
+x2 <- seq(from = -4, to = -1 * abs(Z), by = 0.01)
+y2 <- dnorm(x2, 0, 1)
+
+x3 <- seq(from = abs(Z), to = 4, by = 0.01)
+y3 <- dnorm(x3, 0, 1)
+
+library(grid)
+text_high <- textGrob(paste("Z\n", round(-1*abs(Z), 4)), 
+  gp=gpar(fontsize=12, fontface="bold"))
+text_low <- textGrob(paste("-Z\n", round(abs(Z), 4)), 
+  gp=gpar(fontsize=12, fontface="bold"))
+
+qplot(x1, y1, geom = "line") +
+  labs(x = "", y = "") + 
+  geom_area(aes(x = x2, y = y2), fill = "grey20") +
+  geom_area(aes(x = x3, y = y3), fill = "grey20") + 
+  theme(plot.margin = unit(c(1,1,2,1), "lines")) +
+  coord_cartesian(clip = "off") +
+  annotation_custom(text_high, xmin = Z, xmax = Z, ymin = -0.1, ymax = -0.1) +
+  annotation_custom(text_low, xmin = -Z, xmax = -Z, ymin = -0.1, ymax = -0.1)
+```
+
+So what does this tell us? This tells us that if the null hypothesis ($H_{0}$) is true, the probability of observing a sample mean as unlikely (in this case--as far from the center of the population), or more unlikely (in this case--or farther away from the center of the population), than what we actually observed is $`r round(P, 4)`$. That is fairly likely! Or in other words, our sample is consistent with the null hypothesis, or we have no evidence against the null hypothesis.
+
+### Your turn
+
+With the umpires that had died by the time of the study, test the hypothesis $H_0: \mu = 69.5$ versus $H_A: \mu < 69.5$, where $\mu$ is the true average lifespan for umpires. **Calculate the Z-statistic and p-value for this test.** Note that the test is one-sided.
+
+```{r umpire-test, exercise=TRUE}
+
+```
+
+```{r umpire-test-hint}
+Z = (mean(umpire) - 69.5)/(sd(umpire)/sqrt(length(umpire)))
+P = pnorm(Z)
+list(Z=Z,P=P)
+```
+
+## A Non-technical Summary
+
+For our nitrogen example, we ended up with a p-value of $`r round(P, 4)`$. How do we present this finding? Here is an example of communicating the result:
+
+> There is no evidence to suggest that the mean nitrogen content of the population orchard trees is different from 2.5 units (two-sided Z-test p-value = $`r round(P, 2)`$, n = 36).
+
+Some key points to note:
+
+* The p-value has been translated into an "amount of evidence"
+* The first sentence contains no jargon from the testing procedure but words
+the hypothesis in context of the study.
+* Technical details can be given in parentheses, in this case, the p-value rounded to a reasonable number of decimal places, the test conducted, and the sample size.
+
+Now for a few wrong ways. Here are some too technical or incorrect summaries:
+
+* We conclude that the mean nitrogen content of the orchard trees is not 2.5.
+
+* The probability our conclusion (do not reject the null) is incorrect is $`r round(P, 4)`$.
+
+* We conclude the null hypothesis is true, based on a p-value of $`r round(P, 4)`$.
+
+*Can you figure out what is wrong with each statement?*
+
+### Your turn 
+For the umpire data, the p-value for the Z-test of the hypothesis $H_0: \mu = 69.5$ versus $H_A: \mu < 69.5$, where $\mu$ is the true average lifespan for umpires, is $0.027$.
+
+```{r umpire-ht-summary, echo = FALSE}
+question("Which is the most appropriate summary of the test result? There is",
+  answer("no evidence to suggest the mean lifespan from umpires is less than 69.5."),
+  answer("evidence to suggest the mean lifespan from umpires is less than 69.5.", correct = TRUE),
+  answer("evidence to suggest the mean lifespan from umpires is 69.5."),
+  answer("evidence to suggest the mean lifespan from umpires is 68.5.")
+)
+```
+
+
+## Confidence interval for the mean
+
+We will now obtain an interval estimate of the actual mean nitrogen content of the orchard trees. Note that we use $z_{\alpha/2}$ to denote the z-value with an area of $\alpha/2$ to the *right* of it. The form for such an estimate with 95% confidence is:
+
+$$\left(\overline{x} - z_{\alpha/2}\frac{s}{\sqrt{n}}, \overline{x} + z_{\alpha/2}\frac{s}{\sqrt{n}}\right)$$
+
+Translated to code this is:
+```{r, results='hide'}
+mean(x) - qnorm(0.975) * sd(x)/sqrt(length(x))
+mean(x) + qnorm(0.975) * sd(x)/sqrt(length(x))
+```
+
+```{r, include = FALSE}
+lower_bound <- mean(x) - qnorm(0.975) * sd(x)/sqrt(length(x))
+upper_bound <- mean(x) + qnorm(0.975) * sd(x)/sqrt(length(x))
+```
+The confidence interval is: $`r paste("(", round(lower_bound, 2), ", ", round(upper_bound, 2), ")", sep = "")`$
+
+Just like hypothesis test findings, there are a few right and wrong ways to present confidence interval findings. Here is one example of the right way:
+
+> With 95\% confidence, the true mean nitrogen content of orchard trees is between $`r round(lower_bound, 2)`$ and $`r round(upper_bound, 2)`$.
+
+Here are a few wrong ways to include findings in a non-technical summary:
+
+* There is a 95\% probability that the true mean nitrogen content is between $`r round(lower_bound, 2)`$ and $`r round(upper_bound, 2)`$.
+
+* The true mean nitrogen content is between $`r round(lower_bound, 2)`$ and $`r round(upper_bound, 2)`$.
+
+* We are 95\% confident that the sample mean nitrogen content is between $`r round(lower_bound, 2)`$ and $`r round(upper_bound, 2)`$.
+
+*Can you figure out what is wrong with each statement?*
+
+Notice that 2.5 *is* within the bounds of our confidence interval, so by this method we fail to reject the null hypothesis. This is consistent with our hypothesis test, and an illustration of the duality of confidence intervals and hypothesis tests.
+
+### Your turn 
+
+For the umpire data: find a 95% confidence interval for the mean lifespan for umpires in `umpires`.
+
+```{r umpire-ci, exercise = TRUE}
+
+```
+
+```{r umpire-ci-solution}
+mean(umpire) - qnorm(0.975) * sd(umpire)/sqrt(length(umpire))
+mean(umpire) + qnorm(0.975) * sd(umpire)/sqrt(length(umpire))
+```
+
+Note that the CI here actually covers the value $69.5$ (barely): this seems to be inconsistent with the hypothesis test we did earlier. However, the test we did earlier was one sided. This CI is two-sided. Had we performed a two-sided test earlier, we would have not rejected the null at the $0.05$ level.

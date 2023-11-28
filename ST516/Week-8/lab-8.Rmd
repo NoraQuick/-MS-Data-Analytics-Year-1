@@ -1,0 +1,50 @@
+---
+title: "Lab 8"
+author: "Nora Quick"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(1908) 
+```
+
+# Instructions
+
+Complete the lab tutorial before completing this file.  Use the R Markdown version of this file to complete and submit your homework.  Items in **bold** require an answer. Make sure you change the author in the header to your own name. 
+
+1\. **Use `rep()` to generate a vector containing: 0, 0, 0, 0, 0, 1, 1, 1, 2, 2**
+```{r}
+#vec <- c(rep(0, times = 5), rep(1, times = 3), rep(2, times = 2))
+vec <- c(rep(0, times = 5), 1, 1, 1, 2, 2)
+```
+
+
+2\. **In your own words, describe what happens when negative numbers are used in 
+square bracket subsetting**. *You may refer to the example below.* 
+
+I believe that the square brackets create an array of indicies that we would like to remove from the list. In other words each letter has an index assigned to it and we have a list of indicies that we want to remove from the list.
+
+```{r}
+x <- c("a", "b", "c", "d", "e")
+x[c(-2, -4)]
+```
+
+
+3\. The last function presented in the lab is as follows:
+
+```{r}
+perm_tstat <- function(x, n1){
+  n <- length(x)
+  grp1_indices <- sample(1:n, size = n1, replace = FALSE)
+  grp1_perm <- x[grp1_indices] 
+  grp2_perm <- x[-grp1_indices] 
+  t.test(grp1_perm, grp2_perm)$statistic
+}
+```
+
+**Describe how you would edit this function to use the difference in sample means, instead
+of the t-statistic, as the test statistic in the permutation test.**
+
+I would remove the line with the t-test line and replace it with a two sample wilcoxon test. "wilcox.test(grp1_perm, grp2_perm, paired=TRUE, alternative="two.sided")" seems like the function I would use assuming the two groups were paired. If not I would set to false and if it was a one sample test I would use the one sample wilcoxon version instead.

@@ -1,0 +1,58 @@
+---
+title: "Lab 2"
+author: "Nora Quick"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Consider the following vector:**
+
+```{r}
+set.seed(12345)
+y <- sample(1:100, 20, replace = TRUE)
+y
+```
+
+Write code in the chunks below to answer these questions:
+
+* **Are the values in `y` less than or equal to 50?**
+
+    ```{r}
+   y <= 50
+    ```
+
+* **How many values in `y` are less than or equal to 50?**
+    
+    ```{r}
+   sum(y <= 50)
+    ```
+
+* **What proportion of values in `y` are less than or equal to 50?**
+
+    ```{r}
+   mean(y <= 50)
+    ```
+
+* **Which values in `y` are less than or equal to 50?**
+
+    ```{r}
+   y[y <= 50]
+    ```
+    
+* **Which values in `y` are greater than 25 *and* less than 75?**
+
+    ```{r}
+   y[y > 25 & y < 75]
+    ```
+
+* **Which values in `y` are less than 25 *or* greater than 75?**
+
+    ```{r}
+   y[y < 25 | y > 75]
+    ```
+
+

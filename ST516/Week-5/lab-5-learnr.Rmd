@@ -1,0 +1,204 @@
+---
+title: "Module 5 Lab"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+---
+
+```{r, include=FALSE}
+library(learnr)
+knitr::opts_chunk$set(echo = TRUE, exercise.eval = FALSE, warning = FALSE)
+```
+
+## Introduction
+
+In this lab you will learn more about using the R functions:
+
+* `t.test()` for inference on a single population mean, 
+* `prop.test()`, for inference on a single population proportion using the Normal approximation, and 
+* `binom.test()`, for inference on a single population proportion using an exact Binomial test.
+
+In the final section, you'll review a few more non-technical summaries.
+
+## `t.test()`
+
+The function `t.test()` performs a one or two sample t-test. Here we will use it for a one sample test, and learn how to get other useful information from the function. Remember, for more information type `?t.test`.
+
+First we will generate some data to work with. To make sure we have the same data, the first line of code below will set the "seed" for our random number generator. This is so that we have the same "random" numbers, and thus get the same results (use `?set.seed()` for details). 
+
+I chose 1908 as our seed because that was the year William Gosset invented the t-test!
+```{r sample}
+set.seed(1908) 
+x <- rnorm(n = 40, mean = 5, sd = 5) 
+x
+```
+The first line of code sets the seed for random number generation, and the second line generates 40 Normal random numbers with a mean of five, and standard deviation of five. 
+
+You may think it strange we are doing a t-test on simulated data.  It is!  But, it will set us up well to explore the performance of the test in known situations for future modules.  In practice, you'll have a vector with the observed values from a study, e.g. blood pressure, rainfall etc.
+
+Before we perform a one sample t-test, we have to establish what we are testing. For illustration, let's see whether `t.test()` can tell us about the evidence the  population mean is not equal to three. 
+
+Our null and (two-sided) alternative hypotheses, in statistical notation, are: 
+$$H_{0}: \mu = 3$$
+$$H_{A}: \mu \neq 3 $$
+
+Here's the code to perform the one sample t-test with a null hypothesized mean of 3:
+```{r test1, results="hide"}
+t.test(x, mu = 3, conf.level = 0.95)
+```
+The first argument, `x`, is our data, a vector of values. The argument `mu` declares the null hypothesized value for $\mu$; in this case: $H_{0}: \mu = 3$. The argument, `conf.level`, to specifies the level desired for the confidence interval on the mean, in this case `0.95` gives a 95\% confidence level.
+
+What comes out of `t.test()`?
+```{r ref.label = "test1", echo = FALSE}
+
+```
+
+The first line of output reminds you of the data used, in case you have forgotten! The second line gives the value of the test statistic, the degrees of freedom, and the p-value. The next line states the alternative hypothesis in plain english. The next two lines give the two sided 95\% confidence interval. Finally, `t.test` returns a point estimate for $\mu$.
+
+### Interpreting the output
+
+```{r t-output-estimate, echo = FALSE}
+question("Based on this sample, the estimate of the population mean  is:",
+  answer("3.295"),
+  answer("3.992"),
+  answer("5.569", correct = TRUE),
+  answer("7.146")
+)
+```
+
+```{r t-output-pvalue, echo = FALSE}
+question("The p-value of 0.002 suggests, there is",
+  answer("no evidence that the population mean is 3."),
+  answer("no evidence that the population mean is not 3."),
+  answer("convincing evidence that the population mean is not 3.", correct = TRUE),
+  answer("convincing evidence the population mean is 3.")
+)
+```
+
+```{r t-output-ci, echo = FALSE}
+question("Based on the confidence interval, which values are plausible for the population mean?",
+  answer("3"),
+  answer("4", correct = TRUE),
+  answer("5", correct = TRUE),
+  answer("6", correct = TRUE)
+)
+```
+
+
+### A non-technical summary
+
+Putting the output together you might write the summary:
+
+> There is convincing evidence the population mean (insert response variable here) is not equal to 3 units.  We estimate the mean (insert response variable here) is 5.57, and with 95% confidence, the mean is between 3.99 and 7.14 units.
+
+We worked with simulated data so we didn't have a defined response variable. In practice, to write the summary **in the context of the data**, you'll replace the "(insert response variable here)" with the name of the variable, use the correct units instead of "units", and be explicit about the population. 
+
+## `prop.test()`
+
+`prop.test()` conducts inference for population proportions using the Normal approximation, and like `t.test()`, it handles more than one scenario, although here we'll use it for inference on a single population proportion.
+
+Suppose a gambler purchases a pair of dice made for cheating. Each die is designed to roll a six one out of every four rolls (instead of one out of six). He rolls one die 100 times to test it, and gets 20 sixes.  
+
+We want to know, is the die working as it is designed to? Or more formally, we want to test the null hypothesis that the true proportion of rolls that result in six is 0.25, and the alternative that the rate is different from 0.25. 
+$$H_{0}: p = 0.25$$
+$$H_{A}: p \neq 0.25 $$
+
+Since we have a sample size of 100 rolls, the Central Limit Theorem assures us that a test relying on a Normal approximation to the Binomial will perform well. The function we will use to perform the test is `prop.test()`. 
+
+```{r prop-test, results = "hide"}
+prop.test(x = 20, n = 100, p = 0.25, 
+  conf.level = 0.95, correct = FALSE)
+```
+
+The syntax of the function, and its output follow a similar format to `t.test()`. The `x = 20` and `n = 100` specify the number of "successes" and "trials", respectively.  In this example, our gambler rolled the die 100 times (100 trials), and got a "6" 20 times (20 successes). The `p` argument declares the null hypothesized proportion, in this example 0.25. The argument `conf.int` has the same interpretation as in `t.test()`. The  `correct` argument specifies whether or not to do a continuity correction -- the version you saw in lecture did not do this, so we set it to `FALSE`.
+
+```{r, ref.label = "prop-test", echo = FALSE}
+
+```
+
+The first line of output gives the test conducted, and whether a continuity correction was made. The second line gives the data supplied to the function: "successes" out of "trials," and the null hypothesized proportion. The third line gives the value of the test statistic ($\chi^{2} = 1.33$), the degrees of freedom, and the p-value. Note that the test statistic, $\chi^{2} = 1.33$, is the square of the z-statistic. The next line re-iterates the alternative hypothesis specified. Following that is a 95\% confidence interval, and finally, a point estimate for the unknown proportion. 
+
+```{r prop-output, echo = FALSE}
+question("Is 20 sixes in 100 rolls consistent with the advertised rate of 0.25?",
+  answer("Yes", correct = TRUE),
+  answer("No"),
+  correct = "Yup, since the confidence interval contains 0.25, and our p-value is large, so we would fail to reject the hypothesis that the true proportion is 0.25.",
+  incorrect = "Incorrect.  The the confidence interval contains 0.25, and our p-value is large, so we would fail to reject the hypothesis that the true proportion is 0.25."
+)
+```
+
+### Wald vs. Score intervals
+
+See Module 5, Lecture 2, or run `?prop.test`, for more information about the function. As mentioned in that lecture, `prop.test()` finds the confidence interval by inverting the Score test --- this means the p-value and confidence interval will always be consistent.  However, this method is hard to replicate by hand, which is why in lecture you saw an alternate method for the confidence interval calculation.  To calculate the interval with the method from lecture (a.k.a Wald interval) you need to do the required calculations "by hand":
+```{r z-CI}
+n <- 100 # number of trials
+p_hat <- 20/n # proportion of successes
+p_hat + c(-1, 1) * qnorm(.975) * sqrt(p_hat*(1 - p_hat)/n)
+```
+
+## `binom.test()`
+
+The gambler is a little suspicious, so decides to test the other die. He is running out of patience though, so decides to roll the second die only 20 times, and rolls 3 sixes. Can we reject the null hypothesis that the true proportion of sixes for this die is 0.25, in favor of the alternative that the proportion not 0.25?
+
+$$H_{0}: p = 0.25$$
+$$H_{A}: p \neq 0.25 $$
+
+This time we have may fewer rolls (Binomial trials) to base our decision on, so an exact Binomial test is better than the Normal approximation. This is because the Central Limit Theorem does not guarantee the sample mean will be approximately Normal with such a small sample size. 
+
+`binom.test()` has syntax very similar to that of `prop.test()`, we can perform the exact Binomial test with:
+```{r binom-test}
+binom.test(x = 3, n = 20, p = 0.25, 
+  conf.level = 0.95)
+```
+
+```{r, include = FALSE}
+bt <- binom.test(x = 3, n = 20, p = 0.25, 
+  conf.level = 0.95)
+```
+
+The output tells a story. The gambler rolled three sixes out of 20 rolls, but this is not unlikely if the cheat die is performing as it should. In fact, the probability a player will have a result this extreme, or more extreme, in 20 rolls is `r round(bt$p.value, 2)`. We estimate the true proportion of sixes is `r round(bt$estimate, 2)`, but we are 95\% confident that the proportion of sixes is between `r round(bt$conf.int[1], 2)` and `r round(bt$conf.int[2], 2)`, which contains the die's target proportion. Based on the p-value and the confidence interval, we would fail to reject the null hypothesis that the die is performing as it is designed to.
+
+### Non-technical summary 
+
+Here is an example non-technical summary of the exact Binomial test:
+
+> The die came up six 3 times in 20 games, giving an estimate of the true proportion of sixes of `r round(bt$estimate, 2)`. There is no evidence that the true proportion of sixes is not 0.25 (exact Binomial test, p-value =`r round(bt$p.value, 2)`). With 95\% confidence the true proportion of sixes is between `r round(bt$conf.int[1], 2)` and `r round(bt$conf.int[2], 2)`.
+
+## Inference on median
+
+Consider the class example where want to the null hypothesis that the population median is $H_0: M=4$ based on a sample. 
+
+For testing this $H_0$ we can test whether the proportion of the points that are less than $M$ is 0.5 `binom.test()` (or `prop.test` if the sample size is reasonable large). The R code for the sign test will be:
+
+```{r}
+
+x = c(0.8, 2.1, 2.8, 4.3, 5.3, 6.1, 7.2, 8.2, 9.3, 10.1, 10.9, 12.1);
+M = 4;
+
+x_less_M = x<M;
+n = length(x);
+binom.test(sum(x_less_M), n, p=0.5);
+prop.test(sum(x_less_M), n, p=0.5);
+```
+
+To construct a CI for the median, we use the formula in the lecture notes (page 17 of Module 5 Lecture 3). Note that the formula gives the indices to two observations in the sorted data.
+
+```{r}
+## Point estimation of the median
+median(x);
+
+## CI for the median
+lower_index <- round(n/2 - (qnorm(0.975)*sqrt(n))/2)
+upper_index <- round(n/2 + (qnorm(0.975)*sqrt(n))/2 + 1)
+c(lower_index, upper_index)
+x_sorted = sort(x);
+x_sorted[c(lower_index, upper_index)]
+
+```
+### Non-technical summary 
+
+Here is an example non-technical summary of the above test and CI:
+
+> There is no evidence the population median for this quantity is not 4. It is estimated the population median for this quantity is 6.65. With 95% confidence, the population median is between 2.8 and 10.1.

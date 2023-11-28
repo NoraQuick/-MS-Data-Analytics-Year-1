@@ -1,0 +1,26 @@
+---
+title: "Lab 7"
+author: "Nora Quick"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(1908) 
+```
+
+# Instructions
+
+Complete the lab tutorial before completing this file.  Use the R Markdown version of this file to complete and submit your homework.  Items in **bold** require an answer. Make sure you change the author in the header to your own name. 
+
+In the lab you simulated p-values under various scenarios.
+
+1. **Describe what a histogram of the simulated p-values will look like in a scenario where the p-values are valid.**
+When the p-values are valid the histogram should look like a histogram (i.e. they should all be about the same height).
+
+2. **Describe an example of what a histogram of the simulated p-values may look like in a scenario where the p-values are not valid.**
+When the p-values are not valid the histogram will not be uniform. In the example of the learnr the first bar is tall, it dips low, and then grows again.
+
+3. **To examine the validity of p-values, data was simulated to satisfy the null hypothesis.  Why is it unnecessary to generate data that satisfies the null hypothesis when you evaluate the validity of confidence intervals?**
+It isn't necessary to generate data that satisfies the null hypothesis because even when the null hypothesis isn't satisfied we want to make sure out confidence intervals perform well. In other words, the null hypothesis doesn't need to be true, we just want our data (and CI) for validate what we are looking at. 

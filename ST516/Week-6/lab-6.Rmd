@@ -1,0 +1,56 @@
+---
+title: "Lab 6"
+author: "Nora Quick"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(1908) 
+n <- 40
+x <- rnorm(n = n, mean = 5, sd = 5) 
+y <- x + 5 + rnorm(n)
+z <- sample(x, size = 45, replace = TRUE) + 1 + rnorm(45)
+```
+
+# Instructions
+
+Complete the lab tutorial before completing this file.  Use the R Markdown version of this file to complete and submit your homework.  Items in **bold** require an answer. Make sure you change the author in the header to your own name. 
+
+1\.  Consider the code and output below:
+
+```{r}
+t.test(x, y, paird = TRUE)
+```
+
+a) **Has a paired or two-sample t-test been conducted?** 
+A two-sample t-test has been conducted.
+
+b) **What test do you think the user wanted, and can you see their mistake?**
+They wanted to conduct a paired t-test, however, they forgot the 'e' in "paired = True".
+
+
+2\. Consider the code and output below:
+
+```{r}
+t.test(x, z)
+```
+
+**Which of the following is the correct interpretation of the confidence interval?**
+ 
+* With 95\% confidence, the population mean of `x` is between 0.14 and 3.94
+units greater than the population mean of `z`.
+
+* With 95\% confidence, the population mean of `x` is between 3.94 and 0.14
+units less than the population mean of `z`.
+
+* With 95\% confidence, the population mean of `x` is between 3.94 units less and
+0.14 units greater than the population mean of `z`.
+
+* With 95\% confidence, the population mean of `x` is between 0.14 units less 
+and 3.94 units greater than the population mean of `z`.
+
+
+The correct interpretation of the confidence interval is "With 95\% confidence, the population mean of `x` is between 3.94 units less and
+0.14 units greater than the population mean of `z`."

@@ -1,0 +1,84 @@
+---
+title: "Lab 1"
+author: "Nora Quick"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+# This ensures all your code chunks are displayed in your document
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Questions that you need to answer are in **bold**.  Add your answers in the spaces provided, you may delete any blanks, ___, but do not delete the question text.  
+
+The sections of this lab match those in the [Programming Basics primer](https://rstudio.cloud/learn/primers/1.2) on Rstudio Cloud, so you might like to tackle them as you work through the primer.  
+
+## Functions
+
+**Use the `exp()` function, to find the exponential of 10**.
+```{r}
+exp(10)
+```
+
+**How would you open the help page for the `exp()` function**?
+```{r, eval = FALSE}
+?exp
+```
+
+## Arguments
+
+Consider the code in the following chunk:
+```{r}
+round(3.141593, digits = 2)
+```
+**How many arguments are being passed to `round()`?**
+
+Two arguments are being passed in. The first argument is pi (3.141593) and the other is the digits var (digits = 2).
+
+**What is the name of the argument that is being passed the value 3.141593?** 
+
+The name of the argument being passed pi (3.141593) is 'x'. This can be found using the help page of round using "?round".
+
+## Objects
+
+This code generates a sequence of values from 0 to 1 in steps of 0.05.
+```{r}
+steps <- seq(0, 1, 0.05)
+length(steps)
+
+```
+**Edit the chunk above to: save the values to an object called `steps`, then use the `length()` function to find the length of `steps`.** 
+
+## Vectors
+
+Consider the vector `catfood_servings`:
+```{r}
+catfood_servings <- c(Scylla = 3, Dexter = 5, Underfloor = 4)
+```
+
+**Extract the 2nd element of `catfood_servings`.**
+```{r}
+catfood_servings[2]
+```
+
+**Extract the element with the name `Dexter`**
+```{r}
+catfood_servings["Dexter"]
+```
+
+
+## Types
+
+```{r}
+heights <- c("172", "167", "96", "202", "150")
+names <- c("Luke Skywalker", "C-3PO", "R2-D2", "Darth Vader", "Leia Organa")
+humans <- c(TRUE, FALSE, FALSE, TRUE, TRUE)
+```
+
+**What type of object is `heights`?** : These values are characters due to the quotes around them. 
+
+**What type of object is `names`?** : Again, these are characters due to the quotes around them. 
+
+**What type of object is `humans`?** : These values are booleans (logical).
+

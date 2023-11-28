@@ -1,0 +1,134 @@
+---
+title: "Homework 2"
+author: "Nora Quick"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(11980)
+```
+
+```{r setup}
+library(ggplot2)  # you'll need this package for the R section
+```
+
+# Instructions
+
+Use the R Markdown version of this file to complete and submit your homework.  Items in **bold** require an answer. Make sure you change the author in the header to your own name. 
+
+# Conceptual Questions
+
+1. The integrity of twenty thin metal plates is tested by bending them until they break. The number of pounds per square centimeter (cm) of force required to break each plate is measured and recorded. Five of the plates break with 50 lbs/cm$^{2}$ of pressure or less, while the remaining fifteen plates break with more than 50 lbs/cm$^{2}$ of pressure.
+    
+    a) **What is the proportion of plates that break under the lower amount of pressure?**
+    The proportion is 25%. (5 plates)/(20 plates) = 0.25.
+  
+    b) **Is the proportion you calculated in step a) equal to the probability of a plate breaking under 50 lbs/cm$^{2}$ of pressure or less? Why or why not? If not, what would you need to do to find the exact probability?**
+    No, it is not equal to the probability of a plate breaking under 50lbs/cm$^{2} or less. We would need a large set up trials to determine if it was equal.
+  
+    c) **As more plates are tested, what will happen to the proportion of plates that break under 50 lbs/cm$^{2}$ of pressure or less? What is this phenomenon called?**
+  It will get closer and closer to the exact probability of a plate breaking under 50lbs/cm$^{2} or less. This is the Law of Large Numbers. 
+  
+    d) Assume that the probability of a plate breaking under 70  lbs/cm$^{2}$ of pressure or less is 0.66, the probability of a plate breaking under between 50 and 80 lbs/cm$^{2}$ of pressure is 0.73, and the probability of a plate breaking under between 50 and 70 lbs/cm$^{2}$ of pressure is 0.5. **What is the probability of a plate breaking under more than 80 lbs/cm$^{2}$ of pressure?** (Hint: Drawing a picture might help)
+      
+      We want: P(break > 80)
+      
+      Therefore we find: 1 - P(break < 80)
+      
+        ~~We must subtract P(50 < break <= 70) because it overlaps
+      
+        1 - (P(break <= 70) + P(50 < break <= 80) - P(50 < break <= 70))
+        1 - (0.66 + 0.73 - 0.5) = 1 - 0.89 = 0.11
+        
+    
+    e) Now assume that one thousand plates are tested and 108 of them break under more than 80 lbs/cm$^{2}$ of pressure. **Does this contradict your answer in part D? Why or why not?**
+    108 / 1000 = 0.108
+    This is relatively close to the probability found in d). And while this number is still slightly off from our found probability it doesn't contradict the answer. This is because we could keep testing and keep getting closer to the found probability with the Law of Large Numbers.
+
+# Randomness in everyday life
+
+Come up with an example of a process from your everyday life that has a random outcome.  You don't need to be able to assign probabilities to the outcome of the process you pick.
+
+1. **Describe the process.  Why do you consider it random?**
+  Shuffling a deck of cards. I consider this random becuase the order in which the cards won't be the same every time.
+
+2. **What are the possible outcomes?**
+  Any order of the suits. 
+  Any order of the numbers within those suits. 
+  A combination of both of the previous answers.
+
+3. **Define two different events based on the outcome.**
+  Assuming we shuffle a deck and flip the first card:
+    
+    It's an ace.
+    The number is even. (Assume face cards have numerical values above 10 for this)
+
+4. **Do you think the events you defined are independent?** You do not need to do any calculations here, but you should justify your answer using the definition of independence.
+  No, because the likelyhood of the two above statements happening is not none. In other words they could intersect.
+
+5. **Describe two different random variables you could define on the outcome.**
+  X = 1: if the card is odd,
+  X = 0: if the card is even (if not odd)
+
+## Simulation and estimation in R
+
+1.  The R function `runif()` generates random numbers from the continuous Uniform distribution.  For example, `runif(1, min = 0, max = 1)` generates one random number from a Uniform(0,1) distribution, i.e. one random number between 0 and 1 with uniform probability. 
+
+    a) Create a histogram of 10000 draws from a Uniform(0, 1) distribution.
+  	
+    ```{r}
+    h <- replicate(10000, runif(1, 0, 1))
+    qplot(h)
+    ```
+  	
+  	b) Using your 10000 draws from a), estimate the probability a random variable with this distribution is between 0.5 and 0.75
+
+    ```{r}
+    sum(h > 0.50 & h < 0.75) / 10000
+    ```
+  	
+2. The `rbinom()` function in R simulates random variables from a
+Binomial Distribution. Recall a Binomial random variable is the number
+of successes in $n$ trials where the probability of success is
+$\pi$. In `rbinom()`  $n$ is specified using the `size`
+argument and $\pi$ by the `prob` argument. Confusingly,
+`rbinom()` has an argument called `n`, but this how many
+times we would like to simulate from a Binomial$(n, \pi)$ not the
+value of $n$.
+    
+    So, for example, `rbinom(n  = 1, size = 10, prob = 0.5)`
+    will simulate **one** random variable that has a Binomial(10, 0.5)
+    distribution, whereas `rbinom(n = 10, size = 1, prob = 0.5)` will simulate 10 random variables each with a Binomial(1, 0.5) distribution.
+    
+    In the U.S. having a baby girl isn't as equally likely as having a baby
+    boy, in fact if we think of "having a baby girl" as a success in a
+    single "having a baby" trial, then the probability of success is about
+    0.49 (see [CIA World FactBook](https://www.cia.gov/library/publications/resources/the-world-factbook/fields/351.html#US)).
+
+    a) **Using simulation, estimate the probability that for a family who has two children both will be girls.** (Hint: Estimate $P(X = 2)$ when
+$X \sim$ Binomial$(2, 0.49)$).
+
+    ```{r}
+    X <- rbinom(10000, size = 2, prob = 0.49)
+    mean(X == 2)
+    ```
+
+    b) **Using simulation, estimate the probability that for a family who has four children all are girls.**
+
+    ```{r}
+    X <- rbinom(10000, size = 4, prob = 0.49)
+    mean(X == 4)
+    ```
+    
+    c) **Using simulation, estimate for a family with two children one of whom is a boy, the probability that the other child is a girl.** Hint: This is tricky because it is a conditional probability. You can re-use your simulation of  families with two children from part a), but extract just those where one child is a boy (i.e. $X = 0$, or $1$).  What proportion of those families have a boy and a girl (i.e. $X = 1$)?
+
+    ```{r}
+    b <- X[X == 0 | X == 1]
+    mean(b == 1)
+    ```
+    
+    d) **Why can't we estimate the probability that a randomly chosen family in the US has at least one girl? What additional information would we need to estimate this?**
+    Given what we did above we would need to know how many children are in a family. In other words, if we were to randomly select a family we would need the additional information of how many kids they have before we could estimate.
+    

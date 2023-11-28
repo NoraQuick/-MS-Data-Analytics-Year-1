@@ -1,0 +1,255 @@
+---
+title: "ST 516 - Lab 2"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(ggplot2)
+knitr::opts_chunk$set(echo = TRUE, exercise.eval = FALSE, warning = FALSE)
+set.seed(1018199)
+
+roll2 <- function(bones = 1:6) {
+  dice <- sample(bones, size = 2, replace = TRUE)
+  sum(dice)
+}
+
+checker <- function(label, user_code, check_code, envir_result, evaluate_result, ...) {
+  list(message = check_code, correct = TRUE, location = "append")
+}
+tutorial_options(exercise.checker = checker)
+```
+
+## Lucky Seven
+
+In this lab you will use the function you built at the end of Chapter 2 of [*Hands on Programming in R*](https://rstudio-education.github.io/hopr/basics.html), to explore the chance of winning big in Vegas. This is the function you built:
+
+```{r, eval=TRUE}
+roll2 <- function(bones = 1:6) {
+  dice <- sample(bones, size = 2, replace = TRUE)
+  sum(dice)
+}
+```
+
+Recall that `roll2()` simulates rolling two dice and adding the outcomes. For example, if `roll2()` simulates a roll of three on the first die, and two on the second, it will return a 5. 
+
+Now, go ahead and `roll2()` your dice! Run `roll2()` in code box below:
+```{r roll-dice, exercise=TRUE, exercise.lines=2}
+
+```
+
+```{r roll-dice-solution}
+roll2()
+```
+
+```{r roll-dice-check}
+"Nice, you are on a roll ;)"
+```
+
+Did you get a lucky seven? How often does a lucky seven come up? We could calculate the answer exactly, but instead you'll use a simulation to estimate the probability of rolling a seven. 
+
+## Repeating a trial
+
+Okay, time for more fun. How about we roll our pair of dice 10 times, and check out the results? 
+
+The `replicate()` function is designed to make it easy to repeatedly run code.  The second argument is the code to run, the first argument is how many times you'd like to re-run it.  
+
+For example, you could re-run the code `1 + 3`, five times with:
+```{r}
+replicate(5, 1 + 3)
+```
+The result is a vector with the five repeated results: not surprisingly it's `4` every time.
+
+```{r replicate, echo=FALSE}
+question("What output would you expect from `replicate(1 + 3, 5)`?",
+  answer("[1] 4 4 4 4 4"),
+  answer("[1] 5 5 5 5", correct = TRUE),
+  answer("[1] 1 + 3  1 + 3  1 + 3  1 + 3"),
+  answer("[1] 20")
+)
+```
+
+To re-roll your die 10 times, you could run:
+```{r}
+replicate(10, roll2())
+```
+
+You'll want to save these rolls to investigate them, so let's store the results in an object called `rolls`:
+```{r}
+rolls <- replicate(10, roll2()) # Roll the dice 10 times!
+rolls # Show the results, stored in the "rolls" vector
+```
+
+## Making a histogram
+
+It is not very helpful to look at the results directly, especially if we start replicating a large number of rolls. A histogram of the results will give us a better idea of the distribution of the rolls.
+
+We will use the function `qplot()` from the ggplot2 package for plotting throughout the quarter. If you pass `qplot()` a single vector, it will create a histogram of the values in the vector:
+```{r, fig.width = 5, fig.height=3}
+qplot(rolls, binwidth = 1) # Histogram of our roll outcomes
+```
+
+You might like to try this a few times: roll the dice ten times, and make a histogram of the outcome.
+```{r roll-ten, exercise = TRUE, fig.width = 5, fig.height=3}
+rolls <- replicate(10, roll2())
+qplot(rolls, binwidth = 1, ylab = "Frequency", xlim = c(2, 12))
+```
+
+You'll get different results every time you run this code, it's random after all! 
+
+The true probability distribution for this dice rolling game is given in Figure 2.8 of *OpenIntro Statistics*, 3rd Ed., on page 83 (you can download the figure [here](https://github.com/OpenIntroStat/openintro-statistics/raw/master/ch_probability/figures/diceSumDist/diceSumDist.pdf)). How similar does yours look to Figure 2.8? Probably not too similar! You'll be able to match Figure 2.8 a lot better by increasing the number of replications. Edit the code below to try 50 rolls, 100 rolls, 1000 rolls, and 10000 rolls. 
+```{r roll-more, exercise = TRUE, exercise.eval=TRUE, fig.width = 5, fig.height=3}
+rolls <- replicate(10, roll2())
+qplot(rolls, binwidth = 1, ylab = "Frequency", xlim = c(2, 12))
+```
+<div id="roll-more-hint">
+**Hint:** The first argument to `replicate()` controls how many repeations are conducted, change the `10` to something bigger.
+</div>
+
+How many rolls do you need before the plot doesn't change much if you re-run the code?
+
+```{r nsims, echo=FALSE}
+question("
+How many rolls do you need before the plot doesn't change much if you re-run the code?",
+  answer("50"),
+  answer("100"),
+  answer("1000"),
+  answer("10000", correct = TRUE),
+  correct = "Yes! Although you still might see some small changes from simulation to simulation even with this many repeated trials.",
+  incorrect = "Maybe... Did you try running the simulation again with this many repetitions?  I'd put money the histogram being quite different each time."
+)
+```
+
+## Counting events
+
+To estimate the probability of a lucky seven, we need a way to count the number of `7`s in our `rolls` vector.  To do this, we will use a logical operator. 
+
+The logical operator `==` tests for equality --- for each element, if the value of the left hand side is equal to that on the right hand side it returns `TRUE`, otherwise it returns `FALSE`.  For example, with this smaller vector `fake_rolls`:
+```{r}
+fake_rolls <- c(2, 4, 7, 7, 6, 12)
+```
+
+we can ask if the values are equal to 7:
+```{r}
+fake_rolls == 7
+```
+
+There is `TRUE` in the 3rd and 4th elements because the 3rd and 4th elements in `fake_rolls` are 7.
+
+```{r equality, echo=FALSE}
+question("
+What output would you expect from `fake_rolls == 2`",
+  answer("`[1]  TRUE`"),
+  answer("`[1]  FALSE`"),
+  answer("`[1]  TRUE FALSE FALSE FALSE FALSE FALSE`", correct = TRUE),
+  answer("`[1]  FALSE TRUE TRUE TRUE TRUE TRUE`")
+)
+```
+
+When logical vectors are passed to functions that expect numeric values `TRUE`s get treated as 1 and `FALSE`s as 0. For example, if we pass a logical vector to `sum()` we'll get back the **number** of elements that were `TRUE`:
+```{r}
+sum(fake_rolls == 7)
+```
+
+`fake_rolls` had two sevens in it.  To convert this to a **proportion** we can divide by the length of the vector:
+```{r}
+sum(fake_rolls == 7) / length(fake_rolls)
+```
+
+Or, even more concisely use the `mean()` function with the logical vector:
+```{r}
+mean(fake_rolls == 7)
+```
+
+OK, let's use this to estimate the probability of a lucky seven.  Run the code below to: simulate 10000 rolls, then take the `mean()` of the logical vector comparing each roll to 7:
+```{r estimate-prob, exercise = TRUE}
+rolls <- replicate(10000, roll2())
+mean(rolls == 7)
+```
+
+How close is the value to the true probability of 1/6? You might run the code again and see how much your estimate changes.  How could you get an even closer estimate?
+
+## Logical subsetting
+
+The operator, `==` (you can read as "is equal to", or simply "equals"), is a specific kind of comparison.  Other comparisons include: 
+
+| Operator | Meaning |
+|:--|:--|
+| `<` | less than |
+| `>` | greater than |
+|  `<=` | less than or equal to |
+| `>=` | greater than or equal to |
+| `!=` | not equal to |
+
+Recall our small vector of `fake_rolls`:
+```{r}
+fake_rolls
+```
+
+We could ask if values in `fake_rolls` are greater than 3: 
+```{r}
+fake_rolls > 3
+```
+
+Or if values in `fake_rolls` are less than or equal to than 6:
+```{r}
+fake_rolls <= 6
+```
+
+You can combine logical statements with `&` for AND, or `|` for OR.  So, if you wanted to know if values in `fake_rolls` are greater than 3 **and** less than or equal to than 6, you could do:
+```{r}
+fake_rolls > 3 & fake_rolls <= 6
+```
+
+Edit the code below to ask if values in `fake_rolls` are:
+* less than 3 **or**,
+* not equal to 6.
+```{r logicals, exercise = TRUE, exercise.lines=2}
+fake_rolls > 3 & fake_rolls <= 6
+```
+
+```{r logicals-solution}
+fake_rolls < 3 | fake_rolls != 6
+```
+
+You've already seen one use of logical vectors: to count.  Another use is to extract values that meet a certain criteria. You've seen how to ask if the values of `fake_rolls` are greater than 3:
+```{r}
+fake_rolls > 3
+```
+
+To extract the value of `fake_rolls` where this is `TRUE`, you use square bracket subsetting, but pass in the logical vector:
+```{r}
+fake_rolls[fake_rolls > 3]
+```
+In words you might read this as: "extract the elements of `fake_rolls`, where the value of `fake_rolls` is greater than 3".
+
+Edit the code below to extract the values of `fake_rolls` that are not equal to 6:
+```{r extract, exercise = TRUE, exercise.lines=2}
+fake_rolls[fake_rolls > 3]
+```
+
+```{r extract-solution}
+fake_rolls[fake_rolls != 6]
+```
+## Takeaways
+
+To summarize, in this lab you've seen:
+
+* You can repeat a piece of R code using the `replicate()` function
+* You can make a histogram of a vector with `qplot()`
+* You can use logical expression to answer about the values in a vector like:
+    * Do the values meet a condition? Logical condition alone, e.g. `x == 7`.
+    * How many values meet a condition? Logical condition passed to `sum()`, e.g. `sum(x == 7)`.
+    * Which values meet a condition? Logical condition passed to `[`, e.g. `x[x == 7]`.
+
+
+
+
+
+
+
+

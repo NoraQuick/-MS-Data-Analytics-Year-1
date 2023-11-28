@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+<meta name="progressive" content="true" />
+<meta name="allow-skip" content="true" />
+
+<title>Module 5 Lab</title>
+
+
+<!-- highlightjs -->
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+<!-- taken from https://github.com/rstudio/rmarkdown/blob/67b7f5fc779e4cfdfd0f021d3d7745b6b6e17149/inst/rmd/h/default.html#L296-L362 -->
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("section-TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+<!-- end tabsets -->
+
+
+
+</head>
+
+<body>
+
+
+
+<div class="pageContent band">
+<div class="bandContent page">
+
+<div class="topics">
+
+<div id="section-introduction" class="section level2">
+<h2>Introduction</h2>
+<p>In this lab you will learn more about using the R functions:</p>
+<ul>
+<li><code>t.test()</code> for inference on a single population mean,</li>
+<li><code>prop.test()</code>, for inference on a single population proportion using the Normal approximation, and</li>
+<li><code>binom.test()</code>, for inference on a single population proportion using an exact Binomial test.</li>
+</ul>
+<p>In the final section, you’ll review a few more non-technical summaries.</p>
+</div>
+<div id="section-t.test" class="section level2">
+<h2><code>t.test()</code></h2>
+<p>The function <code>t.test()</code> performs a one or two sample t-test. Here we will use it for a one sample test, and learn how to get other useful information from the function. Remember, for more information type <code>?t.test</code>.</p>
+<p>First we will generate some data to work with. To make sure we have the same data, the first line of code below will set the “seed” for our random number generator. This is so that we have the same “random” numbers, and thus get the same results (use <code>?set.seed()</code> for details).</p>
+<p>I chose 1908 as our seed because that was the year William Gosset invented the t-test!</p>
+<pre class="r"><code>set.seed(1908) 
+x &lt;- rnorm(n = 40, mean = 5, sd = 5) 
+x</code></pre>
+<pre><code>##  [1] 11.1976498  7.7199763  2.5668829 -0.4704134  7.3408905 -1.4265065
+##  [7] 13.6187501  2.8265528 10.2994741  2.1248107  6.6034109 12.2413295
+## [13]  0.5571060 14.8226579 15.5570144  4.3400826  8.2460864  4.1885037
+## [19]  4.6949157 11.2558256  0.9389690  6.8483868  7.9967965  2.5325993
+## [25]  1.1412952  5.0185188  6.2181406 -6.1710370  5.2649135  0.3246880
+## [31]  5.0343295 11.5819554  9.1260516  4.8707156  0.2161102 -0.3875790
+## [37]  4.1853589  2.6693378 13.1452207  3.9052319</code></pre>
+<p>The first line of code sets the seed for random number generation, and the second line generates 40 Normal random numbers with a mean of five, and standard deviation of five.</p>
+<p>You may think it strange we are doing a t-test on simulated data. It is! But, it will set us up well to explore the performance of the test in known situations for future modules. In practice, you’ll have a vector with the observed values from a study, e.g. blood pressure, rainfall etc.</p>
+<p>Before we perform a one sample t-test, we have to establish what we are testing. For illustration, let’s see whether <code>t.test()</code> can tell us about the evidence the population mean is not equal to three.</p>
+<p>Our null and (two-sided) alternative hypotheses, in statistical notation, are: <span class="math display">\[H_{0}: \mu = 3\]</span> <span class="math display">\[H_{A}: \mu \neq 3 \]</span></p>
+<p>Here’s the code to perform the one sample t-test with a null hypothesized mean of 3:</p>
+<pre class="r"><code>t.test(x, mu = 3, conf.level = 0.95)</code></pre>
+<p>The first argument, <code>x</code>, is our data, a vector of values. The argument <code>mu</code> declares the null hypothesized value for <span class="math inline">\(\mu\)</span>; in this case: <span class="math inline">\(H_{0}: \mu = 3\)</span>. The argument, <code>conf.level</code>, to specifies the level desired for the confidence interval on the mean, in this case <code>0.95</code> gives a 95% confidence level.</p>
+<p>What comes out of <code>t.test()</code>?</p>
+<pre><code>## 
+##  One Sample t-test
+## 
+## data:  x
+## t = 3.295, df = 39, p-value = 0.002101
+## alternative hypothesis: true mean is not equal to 3
+## 95 percent confidence interval:
+##  3.992041 7.146209
+## sample estimates:
+## mean of x 
+##  5.569125</code></pre>
+<p>The first line of output reminds you of the data used, in case you have forgotten! The second line gives the value of the test statistic, the degrees of freedom, and the p-value. The next line states the alternative hypothesis in plain english. The next two lines give the two sided 95% confidence interval. Finally, <code>t.test</code> returns a point estimate for <span class="math inline">\(\mu\)</span>.</p>
+<div id="section-interpreting-the-output" class="section level3">
+<h3>Interpreting the output</h3>
+<div class="panel panel-default">
+<div data-label="t-output-estimate" class="tutorial-question panel-body">
+<div id="t-output-estimate-answer_container" class="shiny-html-output"></div>
+<div id="t-output-estimate-message_container" class="shiny-html-output"></div>
+<div id="t-output-estimate-action_button_container" class="shiny-html-output"></div>
+<script>if (Tutorial.triggerMathJax) Tutorial.triggerMathJax()</script>
+</div>
+</div>
+<div class="panel panel-default">
+<div data-label="t-output-pvalue" class="tutorial-question panel-body">
+<div id="t-output-pvalue-answer_container" class="shiny-html-output"></div>
+<div id="t-output-pvalue-message_container" class="shiny-html-output"></div>
+<div id="t-output-pvalue-action_button_container" class="shiny-html-output"></div>
+<script>if (Tutorial.triggerMathJax) Tutorial.triggerMathJax()</script>
+</div>
+</div>
+<div class="panel panel-default">
+<div data-label="t-output-ci" class="tutorial-question panel-body">
+<div id="t-output-ci-answer_container" class="shiny-html-output"></div>
+<div id="t-output-ci-message_container" class="shiny-html-output"></div>
+<div id="t-output-ci-action_button_container" class="shiny-html-output"></div>
+<script>if (Tutorial.triggerMathJax) Tutorial.triggerMathJax()</script>
+</div>
+</div>
+</div>
+<div id="section-a-non-technical-summary" class="section level3">
+<h3>A non-technical summary</h3>
+<p>Putting the output together you might write the summary:</p>
+<blockquote>
+<p>There is convincing evidence the population mean (insert response variable here) is not equal to 3 units. We estimate the mean (insert response variable here) is 5.57, and with 95% confidence, the mean is between 3.99 and 7.14 units.</p>
+</blockquote>
+<p>We worked with simulated data so we didn’t have a defined response variable. In practice, to write the summary <strong>in the context of the data</strong>, you’ll replace the “(insert response variable here)” with the name of the variable, use the correct units instead of “units”, and be explicit about the population.</p>
+</div>
+</div>
+<div id="section-prop.test" class="section level2">
+<h2><code>prop.test()</code></h2>
+<p><code>prop.test()</code> conducts inference for population proportions using the Normal approximation, and like <code>t.test()</code>, it handles more than one scenario, although here we’ll use it for inference on a single population proportion.</p>
+<p>Suppose a gambler purchases a pair of dice made for cheating. Each die is designed to roll a six one out of every four rolls (instead of one out of six). He rolls one die 100 times to test it, and gets 20 sixes.</p>
+<p>We want to know, is the die working as it is designed to? Or more formally, we want to test the null hypothesis that the true proportion of rolls that result in six is 0.25, and the alternative that the rate is different from 0.25. <span class="math display">\[H_{0}: p = 0.25\]</span> <span class="math display">\[H_{A}: p \neq 0.25 \]</span></p>
+<p>Since we have a sample size of 100 rolls, the Central Limit Theorem assures us that a test relying on a Normal approximation to the Binomial will perform well. The function we will use to perform the test is <code>prop.test()</code>.</p>
+<pre class="r"><code>prop.test(x = 20, n = 100, p = 0.25, 
+  conf.level = 0.95, correct = FALSE)</code></pre>
+<p>The syntax of the function, and its output follow a similar format to <code>t.test()</code>. The <code>x = 20</code> and <code>n = 100</code> specify the number of “successes” and “trials”, respectively. In this example, our gambler rolled the die 100 times (100 trials), and got a “6” 20 times (20 successes). The <code>p</code> argument declares the null hypothesized proportion, in this example 0.25. The argument <code>conf.int</code> has the same interpretation as in <code>t.test()</code>. The <code>correct</code> argument specifies whether or not to do a continuity correction – the version you saw in lecture did not do this, so we set it to <code>FALSE</code>.</p>
+<pre><code>## 
+##  1-sample proportions test without continuity correction
+## 
+## data:  20 out of 100, null probability 0.25
+## X-squared = 1.3333, df = 1, p-value = 0.2482
+## alternative hypothesis: true p is not equal to 0.25
+## 95 percent confidence interval:
+##  0.1333669 0.2888292
+## sample estimates:
+##   p 
+## 0.2</code></pre>
+<p>The first line of output gives the test conducted, and whether a continuity correction was made. The second line gives the data supplied to the function: “successes” out of “trials,” and the null hypothesized proportion. The third line gives the value of the test statistic (<span class="math inline">\(\chi^{2} = 1.33\)</span>), the degrees of freedom, and the p-value. Note that the test statistic, <span class="math inline">\(\chi^{2} = 1.33\)</span>, is the square of the z-statistic. The next line re-iterates the alternative hypothesis specified. Following that is a 95% confidence interval, and finally, a point estimate for the unknown proportion.</p>
+<div class="panel panel-default">
+<div data-label="prop-output" class="tutorial-question panel-body">
+<div id="prop-output-answer_container" class="shiny-html-output"></div>
+<div id="prop-output-message_container" class="shiny-html-output"></div>
+<div id="prop-output-action_button_container" class="shiny-html-output"></div>
+<script>if (Tutorial.triggerMathJax) Tutorial.triggerMathJax()</script>
+</div>
+</div>
+<div id="section-wald-vs.score-intervals" class="section level3">
+<h3>Wald vs. Score intervals</h3>
+<p>See Module 5, Lecture 2, or run <code>?prop.test</code>, for more information about the function. As mentioned in that lecture, <code>prop.test()</code> finds the confidence interval by inverting the Score test — this means the p-value and confidence interval will always be consistent. However, this method is hard to replicate by hand, which is why in lecture you saw an alternate method for the confidence interval calculation. To calculate the interval with the method from lecture (a.k.a Wald interval) you need to do the required calculations “by hand”:</p>
+<pre class="r"><code>n &lt;- 100 # number of trials
+p_hat &lt;- 20/n # proportion of successes
+p_hat + c(-1, 1) * qnorm(.975) * sqrt(p_hat*(1 - p_hat)/n)</code></pre>
+<pre><code>## [1] 0.1216014 0.2783986</code></pre>
+</div>
+</div>
+<div id="section-binom.test" class="section level2">
+<h2><code>binom.test()</code></h2>
+<p>The gambler is a little suspicious, so decides to test the other die. He is running out of patience though, so decides to roll the second die only 20 times, and rolls 3 sixes. Can we reject the null hypothesis that the true proportion of sixes for this die is 0.25, in favor of the alternative that the proportion not 0.25?</p>
+<p><span class="math display">\[H_{0}: p = 0.25\]</span> <span class="math display">\[H_{A}: p \neq 0.25 \]</span></p>
+<p>This time we have may fewer rolls (Binomial trials) to base our decision on, so an exact Binomial test is better than the Normal approximation. This is because the Central Limit Theorem does not guarantee the sample mean will be approximately Normal with such a small sample size.</p>
+<p><code>binom.test()</code> has syntax very similar to that of <code>prop.test()</code>, we can perform the exact Binomial test with:</p>
+<pre class="r"><code>binom.test(x = 3, n = 20, p = 0.25, 
+  conf.level = 0.95)</code></pre>
+<pre><code>## 
+##  Exact binomial test
+## 
+## data:  3 and 20
+## number of successes = 3, number of trials = 20, p-value = 0.4394
+## alternative hypothesis: true probability of success is not equal to 0.25
+## 95 percent confidence interval:
+##  0.03207094 0.37892683
+## sample estimates:
+## probability of success 
+##                   0.15</code></pre>
+<p>The output tells a story. The gambler rolled three sixes out of 20 rolls, but this is not unlikely if the cheat die is performing as it should. In fact, the probability a player will have a result this extreme, or more extreme, in 20 rolls is 0.44. We estimate the true proportion of sixes is 0.15, but we are 95% confident that the proportion of sixes is between 0.03 and 0.38, which contains the die’s target proportion. Based on the p-value and the confidence interval, we would fail to reject the null hypothesis that the die is performing as it is designed to.</p>
+<div id="section-non-technical-summary" class="section level3">
+<h3>Non-technical summary</h3>
+<p>Here is an example non-technical summary of the exact Binomial test:</p>
+<blockquote>
+<p>The die came up six 3 times in 20 games, giving an estimate of the true proportion of sixes of 0.15. There is no evidence that the true proportion of sixes is not 0.25 (exact Binomial test, p-value =0.44). With 95% confidence the true proportion of sixes is between 0.03 and 0.38.</p>
+</blockquote>
+</div>
+</div>
+<div id="section-inference-on-median" class="section level2">
+<h2>Inference on median</h2>
+<p>Consider the class example where want to the null hypothesis that the population median is <span class="math inline">\(H_0: M=4\)</span> based on a sample.</p>
+<p>For testing this <span class="math inline">\(H_0\)</span> we can test whether the proportion of the points that are less than <span class="math inline">\(M\)</span> is 0.5 <code>binom.test()</code> (or <code>prop.test</code> if the sample size is reasonable large). The R code for the sign test will be:</p>
+<pre class="r"><code>x = c(0.8, 2.1, 2.8, 4.3, 5.3, 6.1, 7.2, 8.2, 9.3, 10.1, 10.9, 12.1);
+M = 4;
+
+x_less_M = x&lt;M;
+n = length(x);
+binom.test(sum(x_less_M), n, p=0.5);</code></pre>
+<pre><code>## 
+##  Exact binomial test
+## 
+## data:  sum(x_less_M) and n
+## number of successes = 3, number of trials = 12, p-value = 0.146
+## alternative hypothesis: true probability of success is not equal to 0.5
+## 95 percent confidence interval:
+##  0.05486064 0.57185846
+## sample estimates:
+## probability of success 
+##                   0.25</code></pre>
+<pre class="r"><code>prop.test(sum(x_less_M), n, p=0.5);</code></pre>
+<pre><code>## 
+##  1-sample proportions test with continuity correction
+## 
+## data:  sum(x_less_M) out of n, null probability 0.5
+## X-squared = 2.0833, df = 1, p-value = 0.1489
+## alternative hypothesis: true p is not equal to 0.5
+## 95 percent confidence interval:
+##  0.0669357 0.5716439
+## sample estimates:
+##    p 
+## 0.25</code></pre>
+<p>To construct a CI for the median, we use the formula in the lecture notes (page 17 of Module 5 Lecture 3). Note that the formula gives the indices to two observations in the sorted data.</p>
+<pre class="r"><code>## Point estimation of the median
+median(x);</code></pre>
+<pre><code>## [1] 6.65</code></pre>
+<pre class="r"><code>## CI for the median
+lower_index &lt;- round(n/2 - (qnorm(0.975)*sqrt(n))/2)
+upper_index &lt;- round(n/2 + (qnorm(0.975)*sqrt(n))/2 + 1)
+c(lower_index, upper_index)</code></pre>
+<pre><code>## [1]  3 10</code></pre>
+<pre class="r"><code>x_sorted = sort(x);
+x_sorted[c(lower_index, upper_index)]</code></pre>
+<pre><code>## [1]  2.8 10.1</code></pre>
+<div id="section-non-technical-summary-1" class="section level3">
+<h3>Non-technical summary</h3>
+<p>Here is an example non-technical summary of the above test and CI:</p>
+<blockquote>
+There is no evidence the population median for this quantity is not 4. It is estimated the population median for this quantity is 6.65. With 95% confidence, the population median is between 2.8 and 10.1. 
+<script type="application/shiny-prerendered" data-context="server">
+learnr:::register_http_handlers(session, metadata = NULL)
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+session$onSessionEnded(function() {
+        learnr:::session_stop_event(session)
+      })
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+learnr:::question_prerendered_chunk(structure(list(type = "learnr_radio", label = "t-output-estimate",     question = structure("Based on this sample, the estimate of the population mean  is:", html = TRUE, class = c("html",     "character")), answers = list(structure(list(id = "lnr_ans_d11d198",         option = "3.295", value = "3.295", label = structure("3.295", html = TRUE, class = c("html",         "character")), correct = FALSE, message = NULL), class = c("tutorial_question_answer",     "tutorial_quiz_answer")), structure(list(id = "lnr_ans_f8a5d3c",         option = "3.992", value = "3.992", label = structure("3.992", html = TRUE, class = c("html",         "character")), correct = FALSE, message = NULL), class = c("tutorial_question_answer",     "tutorial_quiz_answer")), structure(list(id = "lnr_ans_245cf92",         option = "5.569", value = "5.569", label = structure("5.569", html = TRUE, class = c("html",         "character")), correct = TRUE, message = NULL), class = c("tutorial_question_answer",     "tutorial_quiz_answer")), structure(list(id = "lnr_ans_f27c1d2",         option = "7.146", value = "7.146", label = structure("7.146", html = TRUE, class = c("html",         "character")), correct = FALSE, message = NULL), class = c("tutorial_question_answer",     "tutorial_quiz_answer"))), button_labels = list(submit = structure("Submit Answer", html = TRUE, class = c("html",     "character")), try_again = structure("Try Again", html = TRUE, class = c("html",     "character"))), messages = list(correct = structure("Correct!", html = TRUE, class = c("html",     "character")), try_again = structure("Incorrect", html = TRUE, class = c("html",     "character")), incorrect = structure("Incorrect", html = TRUE, class = c("html",     "character")), message = NULL, post_message = NULL), ids = list(        answer = "t-output-estimate-answer", question = "t-output-estimate"),     loading = structure("<strong>Loading:<\u002fstrong> \nBased on this sample, the estimate of the population mean  is:\n<br/><br/><br/>", html = TRUE, class = c("html",     "character")), random_answer_order = FALSE, allow_retry = FALSE,     seed = 1410094368.34337, options = list()), class = c("learnr_radio", "tutorial_question")))
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+learnr:::question_prerendered_chunk(structure(list(type = "learnr_radio", label = "t-output-pvalue",     question = structure("The p-value of 0.002 suggests, there is", html = TRUE, class = c("html",     "character")), answers = list(structure(list(id = "lnr_ans_9acf40",         option = "no evidence that the population mean is 3.",         value = "no evidence that the population mean is 3.",         label = structure("no evidence that the population mean is 3.", html = TRUE, class = c("html",         "character")), correct = FALSE, message = NULL), class = c("tutorial_question_answer",     "tutorial_quiz_answer")), structure(list(id = "lnr_ans_e100efc",         option = "no evidence that the population mean is not 3.",         value = "no evidence that the population mean is not 3.",         label = structure("no evidence that the population mean is not 3.", html = TRUE, class = c("html",         "character")), correct = FALSE, message = NULL), class = c("tutorial_question_answer",     "tutorial_quiz_answer")), structure(list(id = "lnr_ans_f183edf",         option = "convincing evidence that the population mean is not 3.",         value = "convincing evidence that the population mean is not 3.",         label = structure("convincing evidence that the population mean is not 3.", html = TRUE, class = c("html",         "character")), correct = TRUE, message = NULL), class = c("tutorial_question_answer",     "tutorial_quiz_answer")), structure(list(id = "lnr_ans_9a03d49",         option = "convincing evidence the population mean is 3.",         value = "convincing evidence the population mean is 3.",         label = structure("convincing evidence the population mean is 3.", html = TRUE, class = c("html",         "character")), correct = FALSE, message = NULL), class = c("tutorial_question_answer",     "tutorial_quiz_answer"))), button_labels = list(submit = structure("Submit Answer", html = TRUE, class = c("html",     "character")), try_again = structure("Try Again", html = TRUE, class = c("html",     "character"))), messages = list(correct = structure("Correct!", html = TRUE, class = c("html",     "character")), try_again = structure("Incorrect", html = TRUE, class = c("html",     "character")), incorrect = structure("Incorrect", html = TRUE, class = c("html",     "character")), message = NULL, post_message = NULL), ids = list(        answer = "t-output-pvalue-answer", question = "t-output-pvalue"),     loading = structure("<strong>Loading:<\u002fstrong> \nThe p-value of 0.002 suggests, there is\n<br/><br/><br/>", html = TRUE, class = c("html",     "character")), random_answer_order = FALSE, allow_retry = FALSE,     seed = 654502218.695224, options = list()), class = c("learnr_radio", "tutorial_question")))
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+learnr:::question_prerendered_chunk(structure(list(type = "learnr_checkbox", label = "t-output-ci",     question = structure("Based on the confidence interval, which values are plausible for the population mean?", html = TRUE, class = c("html",     "character")), answers = list(structure(list(id = "lnr_ans_a06777b",         option = "3", value = "3", label = structure("3", html = TRUE, class = c("html",         "character")), correct = FALSE, message = NULL), class = c("tutorial_question_answer",     "tutorial_quiz_answer")), structure(list(id = "lnr_ans_c749a3c",         option = "4", value = "4", label = structure("4", html = TRUE, class = c("html",         "character")), correct = TRUE, message = NULL), class = c("tutorial_question_answer",     "tutorial_quiz_answer")), structure(list(id = "lnr_ans_19c6840",         option = "5", value = "5", label = structure("5", html = TRUE, class = c("html",         "character")), correct = TRUE, message = NULL), class = c("tutorial_question_answer",     "tutorial_quiz_answer")), structure(list(id = "lnr_ans_d20d3ee",         option = "6", value = "6", label = structure("6", html = TRUE, class = c("html",         "character")), correct = TRUE, message = NULL), class = c("tutorial_question_answer",     "tutorial_quiz_answer"))), button_labels = list(submit = structure("Submit Answer", html = TRUE, class = c("html",     "character")), try_again = structure("Try Again", html = TRUE, class = c("html",     "character"))), messages = list(correct = structure("Correct!", html = TRUE, class = c("html",     "character")), try_again = structure("Incorrect", html = TRUE, class = c("html",     "character")), incorrect = structure("Incorrect", html = TRUE, class = c("html",     "character")), message = NULL, post_message = NULL), ids = list(        answer = "t-output-ci-answer", question = "t-output-ci"),     loading = structure("<strong>Loading:<\u002fstrong> \nBased on the confidence interval, which values are plausible for the population mean?\n<br/><br/><br/>", html = TRUE, class = c("html",     "character")), random_answer_order = FALSE, allow_retry = FALSE,     seed = 1473641624.31378, options = list()), class = c("learnr_checkbox", "tutorial_question")))
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+learnr:::question_prerendered_chunk(structure(list(type = "learnr_radio", label = "prop-output",     question = structure("Is 20 sixes in 100 rolls consistent with the advertised rate of 0.25?", html = TRUE, class = c("html",     "character")), answers = list(structure(list(id = "lnr_ans_cd2c62d",         option = "Yes", value = "Yes", label = structure("Yes", html = TRUE, class = c("html",         "character")), correct = TRUE, message = NULL), class = c("tutorial_question_answer",     "tutorial_quiz_answer")), structure(list(id = "lnr_ans_741a5e5",         option = "No", value = "No", label = structure("No", html = TRUE, class = c("html",         "character")), correct = FALSE, message = NULL), class = c("tutorial_question_answer",     "tutorial_quiz_answer"))), button_labels = list(submit = structure("Submit Answer", html = TRUE, class = c("html",     "character")), try_again = structure("Try Again", html = TRUE, class = c("html",     "character"))), messages = list(correct = structure("Yup, since the confidence interval contains 0.25, and our p-value is large, so we would fail to reject the hypothesis that the true proportion is 0.25.", html = TRUE, class = c("html",     "character")), try_again = structure("Incorrect.  The the confidence interval contains 0.25, and our p-value is large, so we would fail to reject the hypothesis that the true proportion is 0.25.", html = TRUE, class = c("html",     "character")), incorrect = structure("Incorrect.  The the confidence interval contains 0.25, and our p-value is large, so we would fail to reject the hypothesis that the true proportion is 0.25.", html = TRUE, class = c("html",     "character")), message = NULL, post_message = NULL), ids = list(        answer = "prop-output-answer", question = "prop-output"),     loading = structure("<strong>Loading:<\u002fstrong> \nIs 20 sixes in 100 rolls consistent with the advertised rate of 0.25?\n<br/><br/><br/>", html = TRUE, class = c("html",     "character")), random_answer_order = FALSE, allow_retry = FALSE,     seed = 1211671195.43577, options = list()), class = c("learnr_radio", "tutorial_question")))
+</script>
+ <!--html_preserve-->
+<script type="application/shiny-prerendered" data-context="dependencies">
+{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["3.6.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/3.6.0"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["jquery-3.6.0.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["jquerylib"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootstrap"]},{"type":"character","attributes":{},"value":["3.3.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/bootstrap"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["viewport"]}},"value":[{"type":"character","attributes":{},"value":["width=device-width, initial-scale=1"]}]},{"type":"character","attributes":{},"value":["js/bootstrap.min.js","shim/html5shiv.min.js","shim/respond.min.js"]},{"type":"character","attributes":{},"value":["css/cerulean.min.css"]},{"type":"character","attributes":{},"value":["<style>h1 {font-size: 34px;}\n       h1.title {font-size: 38px;}\n       h2 {font-size: 30px;}\n       h3 {font-size: 24px;}\n       h4 {font-size: 18px;}\n       h5 {font-size: 16px;}\n       h6 {font-size: 12px;}\n       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}\n       pre:not([class]) { background-color: white }<\/style>"]},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["2.11"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["pagedtable"]},{"type":"character","attributes":{},"value":["1.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/pagedtable-1.1"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["js/pagedtable.js"]},{"type":"character","attributes":{},"value":["css/pagedtable.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["2.11"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["highlightjs"]},{"type":"character","attributes":{},"value":["9.12.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/highlightjs"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["highlight.js"]},{"type":"character","attributes":{},"value":["textmate.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["2.11"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.10.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["0.10.1"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.10.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["0.10.1"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.10.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["0.10.1"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-format"]},{"type":"character","attributes":{},"value":["0.10.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmarkdown/templates/tutorial/resources"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-format.js"]},{"type":"character","attributes":{},"value":["tutorial-format.css","rstudio-theme.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["0.10.1"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["3.6.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/3.6.0"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["jquery-3.6.0.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["jquerylib"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["navigation"]},{"type":"character","attributes":{},"value":["1.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/navigation-1.1"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tabsets.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["2.11"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["highlightjs"]},{"type":"character","attributes":{},"value":["9.12.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/highlightjs"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["highlight.js"]},{"type":"character","attributes":{},"value":["default.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["2.11"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["3.6.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/3.6.0"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["jquery-3.6.0.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["jquerylib"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["font-awesome"]},{"type":"character","attributes":{},"value":["5.1.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/fontawesome"]}]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["css/all.css","css/v4-shims.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["2.11"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootbox"]},{"type":"character","attributes":{},"value":["4.4.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/bootbox"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["bootbox.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["0.10.1"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["idb-keyvalue"]},{"type":"character","attributes":{},"value":["3.2.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/idb-keyval"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["idb-keyval-iife-compat.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[false]},{"type":"character","attributes":{},"value":["0.10.1"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.10.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["0.10.1"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.10.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["0.10.1"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.10.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["0.10.1"]}]}]}
+</script>
+<!--/html_preserve-->
+<!--html_preserve-->
+<script type="application/shiny-prerendered" data-context="execution_dependencies">
+{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["packages"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["packages","version"]},"class":{"type":"character","attributes":{},"value":["data.frame"]},"row.names":{"type":"integer","attributes":{},"value":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42]}},"value":[{"type":"character","attributes":{},"value":["backports","base","bslib","checkmate","compiler","datasets","digest","ellipsis","evaluate","fastmap","graphics","grDevices","htmltools","htmlwidgets","httpuv","jquerylib","jsonlite","knitr","later","learnr","lifecycle","magrittr","markdown","methods","mime","promises","R6","Rcpp","rlang","rmarkdown","rprojroot","sass","shiny","stats","stringi","stringr","tools","utils","withr","xfun","xtable","yaml"]},{"type":"character","attributes":{},"value":["1.2.1","4.0.5","0.3.0","2.0.0","4.0.5","4.0.5","0.6.28","0.3.2","0.14","1.1.0","4.0.5","4.0.5","0.5.2","1.5.4","1.6.3","0.1.4","1.7.2","1.34","1.3.0","0.10.1","1.0.0","2.0.1","1.1","4.0.5","0.11","1.2.0.1","2.5.1","1.0.7","0.4.11","2.11","2.0.2","0.4.0","1.7.1","4.0.5","1.7.4","1.4.0","4.0.5","4.0.5","2.4.2","0.26","1.8-4","2.2.1"]}]}]}
+</script>
+<!--/html_preserve-->
+</blockquote>
+</div>
+</div>
+
+</div> <!-- topics -->
+
+<div class="topicsContainer">
+<div class="topicsPositioner">
+<div class="band">
+<div class="bandContent topicsListContainer">
+
+<!-- begin doc-metadata -->
+<div id="doc-metadata">
+<h2 class="title toc-ignore" style="display:none;">Module 5 Lab</h2>
+</div>
+<!-- end doc-metadata -->
+
+</div> <!-- bandContent.topicsListContainer -->
+</div> <!-- band -->
+</div> <!-- topicsPositioner -->
+</div> <!-- topicsContainer -->
+
+
+</div> <!-- bandContent page -->
+</div> <!-- pageContent band -->
+
+
+
+
+<script>
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+</script>
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+
+</body>
+
+</html>

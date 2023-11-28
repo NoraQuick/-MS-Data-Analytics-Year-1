@@ -1,0 +1,60 @@
+---
+title: "Lab 4"
+author: "Nora Quick"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Instructions
+
+Complete the lab tutorial before completing this file.  Use the R Markdown version of this file to complete and submit your homework.  Items in **bold** require an answer. Make sure you change the author in the header to your own name. 
+
+The following three lines are taken from the lab tutorial:
+```{r, eval = FALSE}
+Z <- (mean(x) - 2.5) / (sd(x)/sqrt(length(x)))
+2 * pnorm(abs(Z), mean = 0, sd = 1, lower.tail = FALSE)
+mean(x) - qnorm(0.975) * sd(x)/sqrt(length(x))
+```
+
+Consider the following six components seen in this code:
+
+* `mean(x)`
+* `2.5`
+* `sd(x)`
+* `length(x)`
+* `qnorm(0.975)`
+* `sd(x) / sqrt(length(x))`
+
+**For each of the six components, match it to the corresponding notation and description from the following lists**.
+
+Mathematical notation (these are written using LaTeX notation, you may need to 
+Knit to preview them:
+
+* $\text{SE}_{\overline{x}}$
+* $\overline{x}$
+* $s$
+* $z_{\alpha/2}$ for $\alpha = 0.05$ level Z-test
+* $n$
+* $\mu_0$
+
+Description:
+
+* population mean under the null hypothesis
+* sample size
+* critical value for an $\alpha = 0.05$ level Z-test
+* sample standard deviation
+* standard error of the mean
+* sample average
+
+Solution:
+
+* standard error of the mean == $\text{SE}_{\overline{x}}$ == `sd(x) / sqrt(length(x))`
+* sample average == $\overline{x}$ == `mean(x)`
+* sample standard deviation == $s$ == `sd(x)`
+* critical value for an $\alpha = 0.05$ level Z-test == $z_{\alpha/2}$ for $\alpha = 0.05$ == `qnorm(0.975)`
+* sample size == $n$ == `length(x)`
+* population mean under the null hypothesis == $\mu_0$ == `2.5`
